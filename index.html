@@ -47,7 +47,7 @@
             transition:.3s;
             font-weight:500;
         }
-        .menu a:hover, .menu a.ativo{
+        .menu a:hover{
             background:#d62300;
             transform:translateX(8px);
         }
@@ -61,8 +61,6 @@
             justify-content:space-between;
             align-items:center;
             margin-bottom:30px;
-            flex-wrap:wrap;
-            gap:15px;
         }
         header h2{
             color:white;
@@ -75,24 +73,6 @@
             font-weight:600;
             color:#d62300;
             box-shadow:0 5px 15px rgba(0,0,0,.2);
-        }
-        .mes-ano{
-            background:white;
-            padding:12px 15px;
-            border-radius:12px;
-            color:#d62300;
-            font-weight:600;
-            display:flex;
-            gap:8px;
-            align-items:center;
-        }
-        .mes-ano input{
-            width:70px;
-            padding:5px;
-            border:1px solid #d62300;
-            border-radius:6px;
-            text-align:center;
-            font-weight:600;
         }
         .cards{
             display:grid;
@@ -108,3 +88,283 @@
             transition:.3s;
         }
         .card:hover{
+            transform:translateY(-8px);
+        }
+        .card h3{
+            font-size:16px;
+            color:#666;
+            margin-bottom:10px;
+        }
+        .numero{
+            font-size:36px;
+            font-weight:700;
+            color:#d62300;
+        }
+        .tabela{
+            background:white;
+            border-radius:20px;
+            padding:20px;
+            box-shadow:0 10px 25px rgba(0,0,0,.15);
+            margin-bottom:30px;
+            overflow:auto;
+        }
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+        th{
+            background:#d62300;
+            color:white;
+            padding:15px;
+        }
+        td{
+            padding:15px;
+            text-align:center;
+            border-bottom:1px solid #eee;
+        }
+        tr:hover{
+            background:#fff4ef;
+        }
+        td[contenteditable]{
+            outline:none;
+            cursor:text;
+        }
+        .funcionarios{
+            background:white;
+            border-radius:20px;
+            padding:20px;
+            box-shadow:0 10px 25px rgba(0,0,0,.15);
+        }
+        .lista{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:15px;
+            margin-top:20px;
+        }
+        .pessoa{
+            display:flex;
+            align-items:center;
+            background:#f8f8f8;
+            padding:12px;
+            border-radius:15px;
+        }
+        .avatar{
+            width:45px;
+            height:45px;
+            background:#d62300;
+            color:white;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:bold;
+            margin-right:12px;
+        }
+        button{
+            background:#d62300;
+            color:white;
+            border:none;
+            padding:12px 22px;
+            border-radius:12px;
+            font-size:15px;
+            cursor:pointer;
+            transition:.3s;
+            margin-top:20px;
+        }
+        button:hover{
+            background:#b61c00;
+        }
+        @media(max-width:900px){
+            body{
+                flex-direction:column;
+            }
+            aside{
+                width:100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="logo">
+            <h1>🍔 BK</h1>
+            <p>Sistema de Escala</p>
+        </div>
+        <div class="menu">
+            <a href="#">🏠 Dashboard</a>
+            <a href="#">📅 Escala</a>
+            <a href="#">👥 Funcionários</a>
+            <a href="#">📊 Relatórios</a>
+            <a href="#">⚙ Configurações</a>
+        </div>
+    </aside>
+    <main>
+        <header>
+            <div>
+                <h2>Dashboard</h2>
+                <p style="color:white">Sistema de Escala de Fechamento</p>
+            </div>
+            <div class="relogio" id="hora"></div>
+        </header>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Funcionários</h3>
+                <div class="numero">7</div>
+            </div>
+            <div class="card">
+                <h3>Dias da Escala</h3>
+                <div class="numero">7</div>
+            </div>
+            <div class="card">
+                <h3>Setores</h3>
+                <div class="numero">4</div>
+            </div>
+            <div class="card">
+                <h3>Status</h3>
+                <div class="numero">✔</div>
+            </div>
+        </div>
+
+        <div class="tabela">
+            <h2 style="margin-bottom:20px;color:#d62300;">📅 Escala do Fechamento</h2>
+            <table id="escala">
+                <tr>
+                    <th>Dia</th>
+                    <th>Broiler</th>
+                    <th>Coifa</th>
+                    <th>Mesa</th>
+                    <th>Louça</th>
+                </tr>
+                <tr>
+                    <td>SEG</td>
+                    <td contenteditable>C.Daniel</td>
+                    <td contenteditable>Thuanny</td>
+                    <td contenteditable>Matheus</td>
+                    <td contenteditable>Mariana</td>
+                </tr>
+                <tr>
+                    <td>TER</td>
+                    <td contenteditable>Mariana</td>
+                    <td contenteditable>Matheus</td>
+                    <td contenteditable>Julyan</td>
+                    <td contenteditable>Tayná</td>
+                </tr>
+                <tr>
+                    <td>QUA</td>
+                    <td contenteditable>Tayná</td>
+                    <td contenteditable>Julyan</td>
+                    <td contenteditable>C.Daniel</td>
+                    <td contenteditable>Thuanny</td>
+                </tr>
+                <tr>
+                    <td>QUI</td>
+                    <td contenteditable>Matheus</td>
+                    <td contenteditable>Tayná</td>
+                    <td contenteditable>Julyan</td>
+                    <td contenteditable>Daniel</td>
+                </tr>
+                <tr>
+                    <td>SEX</td>
+                    <td contenteditable>Julyan</td>
+                    <td contenteditable>C.Daniel</td>
+                    <td contenteditable>Tayná</td>
+                    <td contenteditable>Mariana</td>
+                </tr>
+                <tr>
+                    <td>SÁB</td>
+                    <td contenteditable>Thuanny</td>
+                    <td contenteditable>Mariana</td>
+                    <td contenteditable>C.Daniel</td>
+                    <td contenteditable>Matheus</td>
+                </tr>
+                <tr>
+                    <td>DOM</td>
+                    <td contenteditable>Sorteio</td>
+                    <td contenteditable>Sorteio</td>
+                    <td contenteditable>Sorteio</td>
+                    <td contenteditable>Sorteio</td>
+                </tr>
+            </table>
+            <button onclick="salvar()">💾 Salvar Escala</button>
+            <button onclick="window.print()">🖨 Imprimir</button>
+        </div>
+
+        <div class="funcionarios">
+            <h2 style="color:#d62300;">👥 Funcionários</h2>
+            <div class="lista">
+                <div class="pessoa">
+                    <div class="avatar">D</div>
+                    <div>C.Daniel</div>
+                </div>
+                <div class="pessoa">
+                    <div class="avatar">D</div>
+                    <div>Daniel</div>
+                </div>
+                <div class="pessoa">
+                    <div class="avatar">T</div>
+                    <div>Thuanny</div>
+                </div>
+                <div class="pessoa">
+                    <div class="avatar">M</div>
+                    <div>Matheus</div>
+                </div>
+                <div class="pessoa">
+                    <div class="avatar">M</div>
+                    <div>Mariana</div>
+                </div>
+                <div class="pessoa">
+                    <div class="avatar">J</div>
+                    <div>Julyan</div>
+                </div>
+                <div class="pessoa">
+                    <div class="avatar">T</div>
+                    <div>Tayná</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function atualizarHora(){
+            const agora=new Date();
+            document.getElementById("hora").innerHTML=
+            agora.toLocaleDateString("pt-BR")+"<br>"+
+            agora.toLocaleTimeString("pt-BR");
+        }
+        setInterval(atualizarHora,1000);
+        atualizarHora();
+
+        function salvar(){
+            let dados=[];
+            document.querySelectorAll("#escala tr").forEach((linha,i)=>{
+                if(i==0)return;
+                let colunas=linha.querySelectorAll("td");
+                dados.push({
+                    dia:colunas[0].innerText,
+                    broiler:colunas[1].innerText,
+                    coifa:colunas[2].innerText,
+                    mesa:colunas[3].innerText,
+                    louca:colunas[4].innerText
+                });
+            });
+            localStorage.setItem("escalaBK",JSON.stringify(dados));
+            alert("Escala salva com sucesso!");
+        }
+
+        function carregar(){
+            let dados=JSON.parse(localStorage.getItem("escalaBK"));
+            if(!dados)return;
+            let linhas=document.querySelectorAll("#escala tr");
+            dados.forEach((item,i)=>{
+                let td=linhas[i+1].querySelectorAll("td");
+                td[1].innerText=item.broiler;
+                td[2].innerText=item.coifa;
+                td[3].innerText=item.mesa;
+                td[4].innerText=item.louca;
+            });
+        }
+        carregar();
+    </script>
+</body>
+</html>
