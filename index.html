@@ -599,4 +599,81 @@ function salvarFechamento(){
 }
 function carregarFechamento(){
     const salva = localStorage.getItem('escalaFechamento');
-    if(salva) document.getElementById('escala-fecha
+    if(salva) document.getElementById('escala-fechamento').innerHTML = salva;
+}
+
+// SALVAR E CARREGAR PRÉ-FECHAMENTO
+function salvarPre(){
+    localStorage.setItem('escalaPre', document.getElementById('escala-pre').innerHTML);
+    alert('✅ Escala de Pré-Fechamento salva!');
+}
+function carregarPre(){
+    const salva = localStorage.getItem('escalaPre');
+    if(salva) document.getElementById('escala-pre').innerHTML = salva;
+}
+
+// ===== CALCULADORA DE VALIDADE =====
+function formatarData(data){
+    const dia = String(data.getDate()).padStart(2,'0');
+    const mes = String(data.getMonth()+1).padStart(2,'0');
+    const ano = data.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+}
+
+function usarHoje(){
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth()+1).padStart(2,'0');
+    const dia = String(hoje.getDate()).padStart(2,'0');
+    document.getElementById('dataFab').value = `${ano}-${mes}-${dia}`;
+}
+
+function calcularValidade(){
+    const dataFab = document.getElementById('dataFab').value;
+    const tipo = document.getElementById('tipoValidade').value;
+    const qtd = parseInt(document.getElementById('quantidade').value);
+
+    if(!dataFab || !qtd){
+        alert('⚠️ Preencha a data e a quantidade!');
+        return;
+    }
+
+    let dt = new Date(dataFab);
+    const dataInicial = formatarData(dt);
+
+    if(tipo === 'dias') dt.setDate(dt.getDate() + qtd);
+    else if(tipo === 'meses') dt.setMonth(dt.getMonth() + qtd);
+    else if(tipo === 'anos') dt.setFullYear(dt.getFullYear() + qtd);
+
+    document.getElementById('dtInicio').textContent = dataInicial;
+    document.getElementById('qtdValidade').textContent = `${qtd} ${tipo}`;
+    document.getElementById('dtValidade').textContent = formatarData(dt);
+    document.getElementById('caixaResultado').classList.add('mostrar');
+}
+
+function calcularPrazo(dias){
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth()+1).padStart(2,'0');
+    const dia = String(hoje.getDate()).padStart(2,'0');
+    document.getElementById('dataFab').value = `${ano}-${mes}-${dia}`;
+    document.getElementById('tipoValidade').value = 'dias';
+    document.getElementById('quantidade').value = dias;
+    
+    let dt = new Date(hoje);
+    dt.setDate(dt.getDate() + dias);
+
+    document.getElementById('dtInicio').textContent = formatarData(hoje);
+    document.getElementById('qtdValidade').textContent = `${dias} dias`;
+    document.getElementById('dtValidade').textContent = formatarData(dt);
+    document.getElementById('caixaResultado').classList.add('mostrar');
+}
+
+// CARREGAR TUDO AO ABRIR
+carregarFechamento();
+carregarPre();
+</script>
+
+</body>
+</html>
+
