@@ -4,375 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Escala BK</title>
-    <!-- ✅ FAVICON COM O LOGO DO BK -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23FFEED8' width='200' height='200' rx='30'/%3E%3Cellipse cx='100' cy='55' rx='75' ry='35' fill='%23FF7B00'/%3E%3Cellipse cx='100' cy='145' rx='75' ry='35' fill='%23FF7B00'/%3E%3Ctext x='100' y='115' font-size='70' font-weight='bold' text-anchor='middle' fill='%23D62300' font-family='Arial'%3EBK%3C/text%3E%3C/svg%3E">
-    <!-- ✅ Fonte direto do Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         :root {
             --bk-laranja: #FF7B00;
             --bk-vermelho: #D62300;
             --bk-vermelho-escuro: #B61C00;
             --bk-escuro: #1F1F1F;
-            --bk-claro: #FFF4E8;
-            --sombra-suave: 0 4px 12px rgba(214, 35, 0, 0.15);
-            --sombra-forte: 0 8px 24px rgba(214, 35, 0, 0.25);
-            --raio-borda: 16px;
+            --fundo-pagina: linear-gradient(135deg,#ff7b00,#d62300);
+            --fundo-card: #fff;
+            --texto-padrao: #333;
+            --borda-suave: #FFC8B0;
         }
-
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:'Poppins',sans-serif;
+        body.escuro {
+            --fundo-pagina: linear-gradient(135deg,#1a1a2e,#16213e);
+            --fundo-card: #1f2937;
+            --texto-padrao: #e5e7eb;
+            --borda-suave: #4b5563;
         }
-        html, body{
-            width:100%;
-            min-height:100vh;
-            overflow-x:hidden;
-        }
-        body{
-            background:linear-gradient(135deg,#ff7b00,#d62300);
-        }
-
-        /* SCROLL PERSONALIZADO */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--bk-vermelho); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--bk-vermelho-escuro); }
-
-        aside{
-            width:220px;
-            background: linear-gradient(180deg, var(--bk-escuro) 0%, #2A2A2A 100%);
-            color:white;
-            padding:20px 15px;
-            position:fixed;
-            top:0;
-            left:0;
-            height:100vh;
-            overflow-y:auto;
-            transition: width 0.35s ease, padding 0.35s ease;
-            z-index:100;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
-        }
-        aside.minimizado{
-            width:70px;
-            padding:15px 8px;
-        }
-        aside.minimizado .logo h1 span,
-        aside.minimizado .logo p,
-        aside.minimizado .menu a span{
-            display:none;
-        }
-        aside.minimizado .logo h1{ font-size:24px; }
-        aside.minimizado .menu a{ text-align:center; padding:14px 0; font-size:20px; justify-content:center; }
-
-        .btn-toggle{
-            width:100%;
-            padding:10px;
-            margin-bottom:20px;
-            border:none;
-            border-radius: 12px;
-            background: linear-gradient(90deg, var(--bk-laranja), #FF8C00);
-            color: #000;
-            cursor:pointer;
-            font-weight: 700;
-            font-size: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(255, 123, 0, 0.4);
-        }
-        .btn-toggle:hover{
-            background: linear-gradient(90deg, var(--bk-vermelho), var(--bk-vermelho-escuro));
-            color:white;
-            transform: scale(1.03);
-            box-shadow: 0 6px 16px rgba(214, 35, 0, 0.4);
-        }
-        .btn-toggle:active { transform: scale(0.97); }
-
-        .logo{
-            text-align:center;
-            margin-bottom:24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255,123,0,0.3);
-        }
-        .logo h1{
-            font-size:20px;
-            font-weight: 700;
-            background: linear-gradient(90deg, #fff, #FFD700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .logo p{
-            font-size:12px;
-            opacity:.8;
-            margin-top:6px;
-            color: var(--bk-laranja);
-            font-weight: 500;
-        }
-
-        .menu a{
-            display:flex;
-            align-items:center;
-            gap: 10px;
-            color:white;
-            text-decoration:none;
-            padding:14px 12px;
-            margin-bottom:8px;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            cursor:pointer;
-            font-size:14px;
-            border: 1px solid transparent;
-        }
-        .menu a:hover{
-            background: linear-gradient(90deg, rgba(255,123,0,0.2), rgba(214,35,0,0.2));
-            border-color: var(--bk-laranja);
-            transform: translateX(6px);
-        }
-        .menu a.ativo{
-            background: linear-gradient(90deg, var(--bk-vermelho), var(--bk-vermelho-escuro));
-            box-shadow: 0 4px 12px rgba(214, 35, 0, 0.4);
-            border-color: transparent;
-        }
-
-        main{
-            width:calc(100% - 220px);
-            min-height:100vh;
-            padding:30px 35px;
-            margin-left:220px;
-            transition: all 0.35s ease;
-        }
-        main.expandido{
-            width:calc(100% - 70px);
-            margin-left:70px;
-        }
-
-        .pagina{ display:none; animation: aparecer 0.4s ease-out; }
-        .pagina.ativa{ display:block; }
-
-        @keyframes aparecer {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        header{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:30px;
-            flex-wrap:wrap;
-            gap:15px;
-        }
-        header h2{ color:white; font-size:30px; font-weight:700; text-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-        header p { color: rgba(255,255,255,0.9); font-weight: 500; margin-top: 4px; }
-
-        .relogio{
-            background:white;
-            padding:12px 20px;
-            border-radius: 14px;
-            font-weight: 700;
-            color: var(--bk-vermelho);
-            box-shadow: var(--sombra-forte);
-            font-size:14px;
-            border: 3px solid var(--bk-laranja);
-        }
-
-        .cards{
-            display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-            gap:18px;
-            margin-bottom:30px;
-        }
-        .card{
-            background:white;
-            border-radius: var(--raio-borda);
-            padding:20px;
-            box-shadow: var(--sombra-suave);
-            transition: all 0.35s ease;
-            border-bottom: 4px solid var(--bk-vermelho);
-            position: relative;
-            overflow: hidden;
-        }
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bk-laranja), var(--bk-vermelho));
-        }
-        .card:hover{ transform: translateY(-6px); box-shadow: var(--sombra-forte); }
-        .card h3{ font-size:15px; color:#555; margin-bottom:10px; font-weight: 600; }
-        .numero{
-            font-size:36px;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--bk-laranja), var(--bk-vermelho));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .tabela, .caixa-form{
-            background:white;
-            border-radius: var(--raio-borda);
-            padding:28px;
-            box-shadow: var(--sombra-forte);
-            margin-bottom:28px;
-            overflow:auto;
-            border-top: 5px solid transparent;
-            border-image: linear-gradient(90deg, var(--bk-laranja), var(--bk-vermelho)) 1;
-        }
-        .tabela h2, .caixa-form h2{
-            color: var(--bk-vermelho);
-            margin-bottom:20px;
-            font-size:20px;
-            font-weight: 700;
-        }
-        table{
-            width:100%;
-            border-collapse:separate;
-            border-spacing:0;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        th{
-            background: linear-gradient(90deg, var(--bk-vermelho), var(--bk-vermelho-escuro));
-            color:white;
-            padding:16px 12px;
-            font-weight: 700;
-            font-size:14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        td{
-            padding:16px 12px;
-            text-align:center;
-            border-bottom:1px solid #FFE4D6;
-            font-size:14px;
-            transition: background 0.2s ease;
-        }
-        tr:nth-child(even) td { background: #FFF8F2; }
-        tr:hover td{ background: #FFE4D6; }
-        td[contenteditable]{
-            outline:none;
-            cursor:text;
-            transition: all 0.2s ease;
-            border-radius: 6px;
-        }
-        td[contenteditable]:focus{
-            background: #FFD4B8;
-            box-shadow: inset 0 0 0 2px var(--bk-laranja);
-        }
-
-        .aviso-folgas{
-            background: linear-gradient(90deg, rgba(255,123,0,0.08), rgba(214,35,0,0.05));
-            border-left:5px solid var(--bk-vermelho);
-            padding:16px 20px;
-            border-radius: 12px;
-            margin-top:20px;
-            color: var(--bk-vermelho-escuro);
-            font-weight: 600;
-            line-height:1.7;
-            font-size:14px;
-            box-shadow: inset 0 0 0 1px rgba(255,123,0,0.2);
-        }
-
-        button{
-            background: linear-gradient(90deg, var(--bk-vermelho), var(--bk-vermelho-escuro));
-            color:white;
-            border:none;
-            padding:14px 26px;
-            border-radius: 12px;
-            font-size:15px;
-            cursor:pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            margin-right:12px;
-            margin-top:12px;
-            box-shadow: 0 4px 12px rgba(214, 35, 0, 0.3);
-        }
-        button:hover{ transform: translateY(-3px); box-shadow: 0 6px 20px rgba(214, 35, 0, 0.4); }
-        button:active { transform: translateY(0); }
-
-        .linha-form{
-            display:flex;
-            gap:18px;
-            flex-wrap:wrap;
-            margin-bottom:18px;
-            align-items:center;
-        }
-        .linha-form label{
-            font-weight: 600;
-            color: var(--bk-vermelho-escuro);
-            min-width:120px;
-        }
-        .linha-form input, .linha-form select{
-            padding:12px 16px;
-            border:2px solid #FFC8B0;
-            border-radius:10px;
-            font-size:15px;
-            flex:1;
-            min-width:160px;
-            transition: all 0.3s ease;
-        }
-        .linha-form input:focus, .linha-form select:focus{
-            outline:none;
-            border-color: var(--bk-laranja);
-            box-shadow: 0 0 0 4px rgba(255,123,0,0.15);
-        }
-        .resultado{
-            margin-top:24px;
-            padding:24px;
-            background: linear-gradient(135deg, #FFF4E8, #FFE4D6);
-            border-radius: 14px;
-            border-left:5px solid var(--bk-vermelho);
-            display:none;
-            box-shadow: var(--sombra-suave);
-        }
-        .resultado.mostrar{ display:block; animation: aparecer 0.4s ease-out; }
-        .resultado h3{
-            color: var(--bk-vermelho);
-            margin-bottom:14px;
-            font-size:19px;
-            font-weight: 700;
-        }
-        .resultado p{
-            font-size:16px;
-            color:#444;
-            margin:8px 0;
-            font-weight: 500;
-        }
-        .destaque{
-            font-size:24px;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--bk-laranja), var(--bk-vermelho));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-top:12px;
-            padding-top: 8px;
-            border-top: 2px dashed rgba(214,35,0,0.2);
-        }
-        .dia-semana{
-            font-size:14px;
-            color: var(--bk-vermelho-escuro);
-            font-weight:600;
-            margin-top:4px;
-        }
-
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+        html,body{width:100%;min-height:100vh;overflow-x:hidden;}
+        body{background:var(--fundo-pagina);color:var(--texto-padrao);transition:background .4s ease,color .4s ease;}
+        ::-webkit-scrollbar{width:8px;height:8px;}
+        ::-webkit-scrollbar-track{background:rgba(255,255,255,.1);border-radius:4px;}
+        ::-webkit-scrollbar-thumb{background:var(--bk-vermelho);border-radius:4px;}
+        aside{width:220px;background:linear-gradient(180deg,#1F1F1F,#2A2A2A);color:white;padding:20px 15px;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;transition:width .35s ease;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.3);}
+        aside.minimizado{width:70px;padding:15px 8px;}
+        aside.minimizado .logo h1 span,aside.minimizado .logo p,aside.minimizado .menu a span{display:none;}
+        aside.minimizado .logo h1{font-size:24px;}
+        aside.minimizado .menu a{text-align:center;padding:14px 0;font-size:20px;justify-content:center;}
+        .btn-toggle{width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#FF7B00,#FF8C00);color:#000;cursor:pointer;font-weight:700;font-size:20px;transition:all .3s ease;box-shadow:0 4px 12px rgba(255,123,0,.4);}
+        .btn-toggle:hover{background:linear-gradient(90deg,#D62300,#B61C00);color:white;transform:scale(1.03);}
+        .btn-tema{background:#374151;color:white;font-size:14px;padding:8px;margin-bottom:20px;}
+        .logo{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(255,123,0,.3);}
+        .logo h1{font-size:20px;font-weight:700;background:linear-gradient(90deg,#fff,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .logo p{font-size:12px;opacity:.8;margin-top:6px;color:#FF7B00;font-weight:500;}
+        .status-sinc{font-size:12px;padding:6px 10px;border-radius:8px;margin-top:10px;text-align:center;}
+        .status-sinc.conectado{background:#d1fae5;color:#065f46;}
+        .status-sinc.desconectado{background:#fee2e2;color:#991b1b;}
+        .menu a{display:flex;align-items:center;gap:10px;color:white;text-decoration:none;padding:14px 12px;margin-bottom:8px;border-radius:12px;transition:all .3s ease;font-weight:600;cursor:pointer;font-size:14px;border:1px solid transparent;}
+        .menu a:hover{background:linear-gradient(90deg,rgba(255,123,0,.2),rgba(214,35,0,.2));border-color:#FF7B00;transform:translateX(6px);}
+        .menu a.ativo{background:linear-gradient(90deg,#D62300,#B61C00);box-shadow:0 4px 12px rgba(214,35,0,.4);border-color:transparent;}
+        main{width:calc(100% - 220px);min-height:100vh;padding:30px 35px;margin-left:220px;transition:all .35s ease;}
+        main.expandido{width:calc(100% - 70px);margin-left:70px;}
+        .pagina{display:none;animation:aparecer .4s ease-out;}
+        .pagina.ativa{display:block;}
+        @keyframes aparecer{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
+        header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:15px;}
+        header h2{color:white;font-size:26px;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.2);}
+        header p{color:rgba(255,255,255,.9);font-weight:500;margin-top:4px;}
+        .relogio{background:white;padding:12px 20px;border-radius:14px;font-weight:700;color:#D62300;box-shadow:0 8px 24px rgba(214,35,0,.25);font-size:14px;border:3px solid #FF7B00;}
+        .tabela,.caixa-form{background:var(--fundo-card);border-radius:16px;padding:28px;box-shadow:0 8px 24px rgba(214,35,0,.25);margin-bottom:28px;overflow:auto;border-top:5px solid transparent;border-image:linear-gradient(90deg,#FF7B00,#D62300) 1;color:var(--texto-padrao);}
+        .tabela h2,.caixa-form h2{color:#D62300;margin-bottom:20px;font-size:20px;font-weight:700;}
+        table{width:100%;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;}
+        th{background:linear-gradient(90deg,#D62300,#B61C00);color:white;padding:14px 10px;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.5px;}
+        td{padding:12px 10px;text-align:center;border-bottom:1px solid #FFE4D6;font-size:14px;}
+        body.escuro td{border-bottom:1px solid #374151;}
+        tr:nth-child(even) td{background:#FFF8F2;}
+        body.escuro tr:nth-child(even) td{background:#374151;}
+        tr:hover td{background:#FFE4D6;}
+        body.escuro tr:hover td{background:#4b5563;}
+        button{background:linear-gradient(90deg,#D62300,#B61C00);color:white;border:none;padding:10px 18px;border-radius:10px;font-size:14px;cursor:pointer;transition:all .3s ease;font-weight:600;margin-right:8px;margin-top:8px;box-shadow:0 4px 12px rgba(214,35,0,.3);}
+        button:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(214,35,0,.4);}
+        button:active{transform:translateY(0);}
+        button.sucesso{background:linear-gradient(90deg,#10b981,#059669);}
+        button.vermelho{background:linear-gradient(90deg,#ef4444,#dc2626);padding:5px 8px;font-size:12px;margin:0;}
+        .linha-form{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:15px;align-items:center;}
+        .linha-form label{font-weight:600;color:#B61C00;min-width:100px;}
+        .linha-form input,.linha-form select,.linha-form textarea{padding:10px 14px;border:2px solid var(--borda-suave);border-radius:10px;font-size:15px;flex:1;min-width:180px;transition:all .3s ease;background:transparent;color:var(--texto-padrao);}
+        .linha-form input:focus,.linha-form select:focus,.linha-form textarea:focus{outline:none;border-color:#FF7B00;box-shadow:0 0 0 4px rgba(255,123,0,.15);}
+        .linha-form textarea{min-height:80px;resize:vertical;}
+        .desperdicio-total{background:linear-gradient(135deg,#FFF4E8,#FFE4D6);padding:18px;border-radius:12px;margin-top:20px;border-left:5px solid #D62300;}
+        body.escuro .desperdicio-total{background:linear-gradient(135deg,#374151,#4b5563);}
+        .desperdicio-total h3{color:#D62300;margin-bottom:10px;font-size:18px;}
+        .campo-outros{display:none;margin-top:10px;}
+        .campo-outros.visivel{display:block;}
+        .aviso-diario{background:#fff3cd;border-left:5px solid #ffc107;padding:12px 16px;border-radius:10px;margin-bottom:18px;color:#856404;font-weight:500;}
+        .aviso-sinc{background:#dbeafe;border-left:5px solid #3b82f6;padding:10px 14px;border-radius:8px;margin:12px 0;color:#1e40af;font-size:13px;}
         @media(max-width:768px){
-            aside{ position:relative; width:100%; height:auto; }
-            aside.minimizado{ width:100%; }
-            main{ width:100%; margin-left:0; padding:20px; }
-            main.expandido{ margin-left:0; }
-            table{ font-size:13px; }
-            th, td{ padding:12px 6px; }
-            .cards { grid-template-columns: 1fr 1fr; }
+            aside{position:relative;width:100%;height:auto;}
+            aside.minimizado{width:100%;}
+            main{width:100%;margin-left:0;padding:20px;}
+            main.expandido{margin-left:0;}
+            table{font-size:13px;}
+            th,td{padding:8px 4px;}
         }
     </style>
 </head>
@@ -380,408 +101,414 @@
 
 <aside id="sidebar">
     <button class="btn-toggle" onclick="toggleMenu()">◀</button>
+    <button class="btn-toggle btn-tema" onclick="alternarTema()">🌙 Tema</button>
     <div class="logo">
         <h1>🍔 <span>BK Escala</span></h1>
         <p>Sistema de Escala Oficial</p>
     </div>
+    <div class="status-sinc conectado" id="statusSinc">✅ Sincronizado em tempo real</div>
     <nav class="menu">
         <a class="ativo" onclick="mostrarPagina('fechamento')">📋 <span>Fechamento</span></a>
         <a onclick="mostrarPagina('pre-fechamento')">🔧 <span>Pré-Fechamento</span></a>
         <a onclick="mostrarPagina('validade')">📅 <span>Validade</span></a>
+        <a onclick="mostrarPagina('desperdicio')">📉 <span>Desperdício</span></a>
+        <a onclick="mostrarPagina('utilidades')">🛠️ <span>Utilidades</span></a>
+        <a onclick="mostrarPagina('qrcode')">📱 <span>Acesso Rápido</span></a>
     </nav>
 </aside>
 
 <main id="conteudo">
 
-    <!-- PÁGINA 1: ESCALA DE FECHAMENTO -->
+    <!-- FECHAMENTO -->
     <div id="pag-fechamento" class="pagina ativa">
-        <header>
-            <div>
-                <h2>📋 Escala de Fechamento</h2>
-                <p>Setores: Broiler, Coifa, Mesa e Louça</p>
-            </div>
-            <div class="relogio" id="hora"></div>
-        </header>
-
-        <div class="cards">
-            <div class="card">
-                <h3>Funcionários</h3>
-                <div class="numero">7</div>
-            </div>
-            <div class="card">
-                <h3>Dias da Escala</h3>
-                <div class="numero">7</div>
-            </div>
-            <div class="card">
-                <h3>Setores</h3>
-                <div class="numero">4</div>
-            </div>
-            <div class="card">
-                <h3>Status</h3>
-                <div class="numero">✔</div>
-            </div>
-        </div>
-
+        <header><div><h2>📋 Escala de Fechamento</h2><p>Broiler, Coifa, Mesa e Louça</p></div><div class="relogio" id="hora"></div></header>
         <div class="tabela">
             <h2>Escala de Fechamento</h2>
             <table id="escala-fechamento">
-                <tr>
-                    <th>Dia</th>
-                    <th>Broiler</th>
-                    <th>Coifa</th>
-                    <th>Mesa</th>
-                    <th>Louça</th>
-                </tr>
-                <tr>
-                    <td>SEG</td>
-                    <td contenteditable>C.Daniel</td>
-                    <td contenteditable>Thuanny</td>
-                    <td contenteditable>Matheus</td>
-                    <td contenteditable>Mariana</td>
-                </tr>
-                <tr>
-                    <td>TER</td>
-                    <td contenteditable>Mariana</td>
-                    <td contenteditable>Matheus</td>
-                    <td contenteditable>Julyan</td>
-                    <td contenteditable>Tayná</td>
-                </tr>
-                <tr>
-                    <td>QUA</td>
-                    <td contenteditable>Tayná</td>
-                    <td contenteditable>Julyan</td>
-                    <td contenteditable>C.Daniel</td>
-                    <td contenteditable>Thuanny</td>
-                </tr>
-                <tr>
-                    <td>QUI</td>
-                    <td contenteditable>Matheus</td>
-                    <td contenteditable>Tayná</td>
-                    <td contenteditable>Julyan</td>
-                    <td contenteditable>Daniel</td>
-                </tr>
-                <tr>
-                    <td>SEX</td>
-                    <td contenteditable>Julyan</td>
-                    <td contenteditable>C.Daniel</td>
-                    <td contenteditable>Tayná</td>
-                    <td contenteditable>Mariana</td>
-                </tr>
-                <tr>
-                    <td>SÁB</td>
-                    <td contenteditable>Thuanny</td>
-                    <td contenteditable>Mariana</td>
-                    <td contenteditable>C.Daniel</td>
-                    <td contenteditable>Matheus</td>
-                </tr>
-                <tr>
-                    <td>DOM</td>
-                    <td contenteditable>Sorteio</td>
-                    <td contenteditable>Sorteio</td>
-                    <td contenteditable>Sorteio</td>
-                    <td contenteditable>Sorteio</td>
-                </tr>
+                <tr><th>Dia</th><th>Broiler</th><th>Coifa</th><th>Mesa</th><th>Louça</th></tr>
+                <tr><td>SEG</td><td contenteditable>C.Daniel</td><td contenteditable>Thuanny</td><td contenteditable>Matheus</td><td contenteditable>Mariana</td></tr>
+                <tr><td>TER</td><td contenteditable>Mariana</td><td contenteditable>Matheus</td><td contenteditable>Julyan</td><td contenteditable>Tayná</td></tr>
+                <tr><td>QUA</td><td contenteditable>Tayná</td><td contenteditable>Julyan</td><td contenteditable>C.Daniel</td><td contenteditable>Thuanny</td></tr>
+                <tr><td>QUI</td><td contenteditable>Matheus</td><td contenteditable>Tayná</td><td contenteditable>Julyan</td><td contenteditable>Daniel</td></tr>
+                <tr><td>SEX</td><td contenteditable>Julyan</td><td contenteditable>C.Daniel</td><td contenteditable>Tayná</td><td contenteditable>Mariana</td></tr>
+                <tr><td>SÁB</td><td contenteditable>Thuanny</td><td contenteditable>Mariana</td><td contenteditable>C.Daniel</td><td contenteditable>Matheus</td></tr>
+                <tr><td>DOM</td><td contenteditable>Sorteio</td><td contenteditable>Sorteio</td><td contenteditable>Sorteio</td><td contenteditable>Sorteio</td></tr>
             </table>
             <button onclick="salvarFechamento()">💾 Salvar</button>
             <button onclick="window.print()">🖨 Imprimir</button>
         </div>
     </div>
 
-    <!-- PÁGINA 2: ESCALA DE PRÉ-FECHAMENTO -->
+    <!-- PRÉ-FECHAMENTO -->
     <div id="pag-pre-fechamento" class="pagina">
-        <header>
-            <div>
-                <h2>🔧 Escala de Pré-Fechamento</h2>
-                <p>Setores: Lixeiras, Frozen, Batateira, Freezer Carne e Frango</p>
-            </div>
-            <div class="relogio" id="hora2"></div>
-        </header>
-
-        <div class="cards">
-            <div class="card">
-                <h3>Funcionários</h3>
-                <div class="numero">4</div>
-            </div>
-            <div class="card">
-                <h3>Dias da Escala</h3>
-                <div class="numero">7</div>
-            </div>
-            <div class="card">
-                <h3>Setores</h3>
-                <div class="numero">5</div>
-            </div>
-            <div class="card">
-                <h3>Status</h3>
-                <div class="numero">✔</div>
-            </div>
-        </div>
-
+        <header><div><h2>🔧 Escala de Pré-Fechamento</h2><p>Lixeiras, Frozen, Batateira, Freezer Carne e Frango</p></div><div class="relogio" id="hora2"></div></header>
         <div class="tabela">
             <h2>Escala de Pré-Fechamento</h2>
             <table id="escala-pre">
-                <tr>
-                    <th>Dia</th>
-                    <th>Lixeiras</th>
-                    <th>Frozen</th>
-                    <th>Batateira</th>
-                    <th>Freezer Carne</th>
-                    <th>Freezer Frango</th>
-                </tr>
-                <tr>
-                    <td>SEG</td>
-                    <td contenteditable>Amanda</td>
-                    <td contenteditable>Luisa</td>
-                    <td contenteditable>Amanda</td>
-                    <td contenteditable>Luisa</td>
-                    <td contenteditable>Luisa</td>
-                </tr>
-                <tr>
-                    <td>TER</td>
-                    <td contenteditable>Dandara</td>
-                    <td contenteditable>Gabriel</td>
-                    <td contenteditable>Amanda</td>
-                    <td contenteditable>Gabriel</td>
-                    <td contenteditable>Dandara</td>
-                </tr>
-                <tr>
-                    <td>QUA</td>
-                    <td contenteditable>Amanda</td>
-                    <td contenteditable>Luisa</td>
-                    <td contenteditable>Dandara</td>
-                    <td contenteditable>Amanda</td>
-                    <td contenteditable>Luisa</td>
-                </tr>
-                <tr>
-                    <td>QUI</td>
-                    <td contenteditable>Gabriel</td>
-                    <td contenteditable>Luisa</td>
-                    <td contenteditable>Dandara</td>
-                    <td contenteditable>Gabriel</td>
-                    <td contenteditable>Dandara</td>
-                </tr>
-                <tr>
-                    <td>SEX</td>
-                    <td contenteditable>Gabriel</td>
-                    <td contenteditable>Amanda</td>
-                    <td contenteditable>Luisa</td>
-                    <td contenteditable>Dandara</td>
-                    <td contenteditable>Gabriel</td>
-                </tr>
-                <tr>
-                    <td>SÁB</td>
-                    <td contenteditable>Luisa</td>
-                    <td contenteditable>Dandara</td>
-                    <td contenteditable>Gabriel</td>
-                    <td contenteditable>Amanda</td>
-                    <td contenteditable>Luisa</td>
-                </tr>
-                <tr>
-                    <td>DOM</td>
-                    <td contenteditable>Sorteio</td>
-                    <td contenteditable>Sorteio</td>
-                    <td contenteditable>Sorteio</td>
-                    <td contenteditable>Sorteio</td>
-                    <td contenteditable>Sorteio</td>
-                </tr>
+                <tr><th>Dia</th><th>Lixeiras</th><th>Frozen</th><th>Batateira</th><th>Freezer Carne</th><th>Freezer Frango</th></tr>
+                <tr><td>SEG</td><td contenteditable>Amanda</td><td contenteditable>Luisa</td><td contenteditable>Amanda</td><td contenteditable>Luisa</td><td contenteditable>Luisa</td></tr>
+                <tr><td>TER</td><td contenteditable>Dandara</td><td contenteditable>Gabriel</td><td contenteditable>Amanda</td><td contenteditable>Gabriel</td><td contenteditable>Dandara</td></tr>
+                <tr><td>QUA</td><td contenteditable>Amanda</td><td contenteditable>Luisa</td><td contenteditable>Dandara</td><td contenteditable>Amanda</td><td contenteditable>Luisa</td></tr>
+                <tr><td>QUI</td><td contenteditable>Gabriel</td><td contenteditable>Luisa</td><td contenteditable>Dandara</td><td contenteditable>Gabriel</td><td contenteditable>Dandara</td></tr>
+                <tr><td>SEX</td><td contenteditable>Gabriel</td><td contenteditable>Amanda</td><td contenteditable>Luisa</td><td contenteditable>Dandara</td><td contenteditable>Gabriel</td></tr>
+                <tr><td>SÁB</td><td contenteditable>Luisa</td><td contenteditable>Dandara</td><td contenteditable>Gabriel</td><td contenteditable>Amanda</td><td contenteditable>Luisa</td></tr>
+                <tr><td>DOM</td><td contenteditable>Sorteio</td><td contenteditable>Sorteio</td><td contenteditable>Sorteio</td><td contenteditable>Sorteio</td><td contenteditable>Sorteio</td></tr>
             </table>
-            <div class="aviso-folgas">
-                <strong>📌 Folgas:</strong> Gabriel - Quarta-feira | Luisa - Terça-feira | Amanda - Quinta-feira | Dandara - Segunda-feira
-            </div>
+            <div class="aviso-diario"><strong>📌 Folgas:</strong> Gabriel - Quarta | Luisa - Terça | Amanda - Quinta | Dandara - Segunda</div>
             <button onclick="salvarPre()">💾 Salvar</button>
             <button onclick="window.print()">🖨 Imprimir</button>
         </div>
     </div>
 
-    <!-- PÁGINA 3: CALCULADORA DE VALIDADE -->
+    <!-- VALIDADE -->
     <div id="pag-validade" class="pagina">
-        <header>
-            <div>
-                <h2>📅 Calculadora de Validade</h2>
-                <p>Calcule a data de validade e o dia da semana</p>
-            </div>
-            <div class="relogio" id="hora3"></div>
-        </header>
-
+        <header><div><h2>📅 Controle de Validade</h2><p>Validades padrão, temperaturas e calculadora</p></div><div class="relogio" id="hora3"></div></header>
+        <div class="tabela">
+            <h2>📋 Validades Padrão</h2>
+            <table>
+                <tr><th>Produto</th><th>Validade</th></tr>
+                <tr><td>Maionese</td><td>7 dias</td></tr>
+                <tr><td>Molho Stacker</td><td>3 dias</td></tr>
+                <tr><td>Barbecue</td><td>7 dias</td></tr>
+                <tr><td>Cheddar</td><td>5 dias</td></tr>
+                <tr><td>Picles</td><td>7 dias</td></tr>
+                <tr><td>Pimenta</td><td>7 dias</td></tr>
+                <tr><td>Queijo</td><td>4 dias</td></tr>
+            </table>
+        </div>
         <div class="caixa-form">
             <h2>🔍 Calcular Validade</h2>
-
-            <div class="linha-form">
-                <label>Data de Fabricação:</label>
-                <input type="date" id="dataFab">
-            </div>
-
-            <div class="linha-form">
-                <label>Validade por:</label>
-                <select id="tipoValidade">
-                    <option value="dias">Dias</option>
-                    <option value="meses">Meses</option>
-                    <option value="anos">Anos</option>
-                </select>
-            </div>
-
-            <div class="linha-form">
-                <label>Quantidade:</label>
-                <input type="number" id="quantidade" placeholder="Ex: 30" min="1">
-            </div>
-
+            <div class="linha-form"><label>Data de Fabricação:</label><input type="date" id="dataFab"></div>
+            <div class="linha-form"><label>Validade por:</label><select id="tipoValidade"><option value="dias">Dias</option><option value="meses">Meses</option><option value="anos">Anos</option></select></div>
+            <div class="linha-form"><label>Quantidade:</label><input type="number" id="quantidade" placeholder="Ex: 30" min="1"></div>
             <button onclick="calcularValidade()">🧮 Calcular</button>
-            <button onclick="usarHoje()">📍 Usar data de hoje</button>
-
-            <div class="resultado" id="caixaResultado">
+            <button onclick="usarHoje()">📍 Hoje</button>
+            <div class="resultado" id="caixaResultado" style="margin-top:20px;padding:20px;background:#FFF4E8;border-radius:12px;border-left:4px solid #D62300;display:none;">
                 <h3>✅ Resultado</h3>
                 <p>📆 Data inicial: <span id="dtInicio"></span></p>
-                <p class="dia-semana" id="dsInicio"></p>
                 <p>⏳ Validade: <span id="qtdValidade"></span></p>
-                <div class="destaque">📅 Válido até: <span id="dtValidade"></span></div>
-                <p class="dia-semana" id="dsValidade"></p>
+                <p style="font-size:20px;font-weight:800;color:#D62300;margin-top:8px;">📅 Válido até: <span id="dtValidade"></span></p>
             </div>
+        </div>
+    </div>
+
+    <!-- DESPERDÍCIO (SINCRONIZAÇÃO AUTOMÁTICA) -->
+    <div id="pag-desperdicio" class="pagina">
+        <header><div><h2>📉 Controle de Desperdício</h2><p>Período: Meia-noite até às 03:00 do dia seguinte</p></div><div class="relogio" id="horaDesperdicio"></div></header>
+        
+        <div class="aviso-diario">
+            ⚠️ Os registros ficam válidos até às <strong>03:00 do dia seguinte</strong>. Após isso, são zerados automaticamente.
+        </div>
+        <div class="aviso-sinc">
+            ✅ <strong>Sincronização automática ativa!</strong> Todos os aparelhos atualizam em tempo real.
         </div>
 
         <div class="caixa-form">
-            <h2>⚡ Exemplos Rápidos</h2>
-            <button onclick="calcularPrazo(7)">7 Dias</button>
-            <button onclick="calcularPrazo(15)">15 Dias</button>
-            <button onclick="calcularPrazo(30)">1 Mês (30 dias)</button>
-            <button onclick="calcularPrazo(90)">3 Meses</button>
-            <button onclick="calcularPrazo(180)">6 Meses</button>
+            <h2>➕ Adicionar Desperdício</h2>
+            <div class="linha-form">
+                <label>Produto:</label>
+                <select id="produto" onchange="verificarOutros()">
+                    <option value="">Selecione...</option>
+                    <option value="Pão de Hambúrguer">Pão de Hambúrguer</option>
+                    <option value="Pão de Whopper">Pão de Whopper</option>
+                    <option value="Carne de Hambúrguer">Carne de Hambúrguer</option>
+                    <option value="Carne de Whopper">Carne de Whopper</option>
+                    <option value="Chicken">Chicken</option>
+                    <option value="Crispy">Crispy</option>
+                    <option value="Pão Supremo">Pão Supremo</option>
+                    <option value="Pão de Brioche">Pão de Brioche</option>
+                    <option value="outros">Outros...</option>
+                </select>
+            </div>
+            <div class="linha-form campo-outros" id="campoOutros">
+                <label>Especifique:</label>
+                <input type="text" id="produtoOutros" placeholder="Nome do produto">
+            </div>
+            <div class="linha-form"><label>Quantidade:</label><input type="number" id="qtdDesperdicio" placeholder="Ex: 5" min="1"></div>
+            <div class="linha-form"><label>Motivo:</label><textarea id="motivo" placeholder="Vencido, caiu no chão, erro de preparo..."></textarea></div>
+            <button class="sucesso" onclick="adicionarDesperdicio()">✅ Adicionar Registro</button>
+            <button class="vermelho" onclick="limparDesperdicios()">🗑️ Zerar Tudo</button>
+        </div>
+
+        <div class="tabela">
+            <h2>📋 Registros do Período</h2>
+            <table><thead><tr><th>Horário</th><th>Produto</th><th>Qtd</th><th>Motivo</th><th>Excluir</th></tr></thead><tbody id="corpoDesp"></tbody></table>
+            <div class="desperdicio-total"><h3>📊 Resumo</h3><p id="resumo">Nenhum registro ainda.</p></div>
+        </div>
+    </div>
+
+    <!-- UTILIDADES -->
+    <div id="pag-utilidades" class="pagina">
+        <header><div><h2>🛠️ Utilidades</h2><p>Ferramentas práticas</p></div><div class="relogio" id="hora4"></div></header>
+        <div class="caixa-form">
+            <h2>🌴 Dias até a Folga</h2>
+            <div class="linha-form">
+                <label>Nome:</label>
+                <select id="funcionario" onchange="calcularFolga()">
+                    <option value="">Selecione</option>
+                    <option value="1">Dandara (Segunda)</option>
+                    <option value="2">Luisa (Terça)</option>
+                    <option value="3">Gabriel (Quarta)</option>
+                    <option value="4">Amanda (Quinta)</option>
+                    <option value="5">Julyan (Sexta)</option>
+                    <option value="6">--- (Sábado)</option>
+                    <option value="0">--- (Domingo)</option>
+                </select>
+            </div>
+            <div id="resFolga" style="margin-top:15px;padding:15px;background:#FFF4E8;border-radius:12px;border-left:4px solid #D62300;display:none;">
+                <p id="textoFolga"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR CODE -->
+    <div id="pag-qrcode" class="pagina">
+        <header><div><h2>📱 Acesso Rápido</h2><p>Escaneie para abrir no celular</p></div><div class="relogio" id="hora5"></div></header>
+        <div class="tabela" style="text-align:center;">
+            <h2>📱 Escaneie o QR Code</h2>
+            <div style="background:white;padding:15px;border-radius:12px;display:inline-block;margin:10px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://burguerking723.github.io/Escala18069/" alt="QR Code">
+            </div>
+            <p style="margin-top:15px; font-size:14px; color:#666;">Ou acesse:<br><strong style="color:#D62300;">https://burguerking723.github.io/Escala18069/</strong></p>
         </div>
     </div>
 
 </main>
 
 <script>
+// ==========================================================
+// ✅ DADOS JÁ PREENCHIDOS! NÃO ALTERE ESTA PARTE!
+// ==========================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCPfk6RUVWYZ8vQ80j-HSPrIK42yzwIA-Nk",
+  authDomain: "bk-escala.firebaseapp.com",
+  databaseURL: "https://bk-escala-default-rtdb.firebaseio.com",
+  projectId: "bk-escala",
+  storageBucket: "bk-escala.firebasestorage.app",
+  messagingSenderId: "191531981744",
+  appId: "1:191531981744:web:9f87cc5ae24bfa1e3c31475"
+};
+// ==========================================================
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const DESPERDICIO_REF = db.ref('desperdicio');
+const DATA_REF = db.ref('dataReferencia');
+
+const diasSemana = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
 const sidebar = document.getElementById('sidebar');
 const conteudo = document.getElementById('conteudo');
+let carregando = false;
 
-// ENCOLHER/EXPANDIR MENU
+// ===== SISTEMA DE PERÍODO (até 03:00 do dia seguinte) =====
+function getDataReferencia(){
+    const agora = new Date();
+    const hora = agora.getHours();
+    const data = new Date(agora);
+    if(hora < 3) data.setDate(data.getDate() - 1);
+    return `${data.getFullYear()}-${String(data.getMonth()+1).padStart(2,'0')}-${String(data.getDate()).padStart(2,'0')}`;
+}
+
+async function verificarNovoDia(){
+    const dataAtual = getDataReferencia();
+    const snap = await DATA_REF.once('value');
+    const dataSalva = snap.val();
+    if(dataSalva && dataSalva !== dataAtual){
+        await DESPERDICIO_REF.remove();
+        await DATA_REF.set(dataAtual);
+    }
+    if(!dataSalva || dataSalva !== dataAtual){
+        await DATA_REF.set(dataAtual);
+    }
+}
+
+// ===== MENU E TEMA =====
 function toggleMenu(){
     sidebar.classList.toggle('minimizado');
     conteudo.classList.toggle('expandido');
-    const btn = document.querySelector('.btn-toggle');
-    btn.textContent = sidebar.classList.contains('minimizado') ? '▶' : '◀';
+    document.querySelector('.btn-toggle').textContent = sidebar.classList.contains('minimizado') ? '▶' : '◀';
 }
 
-// TROCAR DE PÁGINA
+function alternarTema(){
+    document.body.classList.toggle('escuro');
+    localStorage.setItem('tema', document.body.classList.contains('escuro') ? 'escuro' : 'claro');
+}
+if(localStorage.getItem('tema')==='escuro') document.body.classList.add('escuro');
+
 function mostrarPagina(nome){
-    document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
+    document.querySelectorAll('.pagina').forEach(p=>p.classList.remove('ativa'));
     document.getElementById(`pag-${nome}`).classList.add('ativa');
-    document.querySelectorAll('.menu a').forEach(a => a.classList.remove('ativo'));
+    document.querySelectorAll('.menu a').forEach(a=>a.classList.remove('ativo'));
     event.currentTarget.classList.add('ativo');
 }
 
-// RELÓGIO
 function atualizarHora(){
     const agora = new Date();
-    const horaTexto = agora.toLocaleDateString("pt-BR") + "<br>" + agora.toLocaleTimeString("pt-BR");
-    document.getElementById("hora").innerHTML = horaTexto;
-    document.getElementById("hora2").innerHTML = horaTexto;
-    document.getElementById("hora3").innerHTML = horaTexto;
+    const txt = agora.toLocaleDateString("pt-BR") + "<br>" + agora.toLocaleTimeString("pt-BR");
+    ["hora","hora2","hora3","hora4","hora5","horaDesperdicio"].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=txt;});
 }
-setInterval(atualizarHora, 1000);
+setInterval(atualizarHora,1000);
 atualizarHora();
 
-// SALVAR E CARREGAR FECHAMENTO
-function salvarFechamento(){
-    localStorage.setItem('escalaFechamento', document.getElementById('escala-fechamento').innerHTML);
-    alert('✅ Escala de Fechamento salva!');
-}
-function carregarFechamento(){
-    const salva = localStorage.getItem('escalaFechamento');
-    if(salva) document.getElementById('escala-fechamento').innerHTML = salva;
+// ===== ESCALAS =====
+function salvarFechamento(){localStorage.setItem('escalaFechamento',document.getElementById('escala-fechamento').innerHTML);alert('✅ Salvo!');}
+function carregarFechamento(){const s=localStorage.getItem('escalaFechamento');if(s)document.getElementById('escala-fechamento').innerHTML=s;}
+function salvarPre(){localStorage.setItem('escalaPre',document.getElementById('escala-pre').innerHTML);alert('✅ Salvo!');}
+function carregarPre(){const s=localStorage.getItem('escala-pre');if(s)document.getElementById('escala-pre').innerHTML=s;}
+
+// ===== FOLGA =====
+function calcularFolga(){
+    const v = document.getElementById('funcionario').value;
+    const res = document.getElementById('resFolga');
+    if(!v){res.style.display='none';return;}
+    res.style.display='block';
+    const hoje = new Date().getDay();
+    let faltam = parseInt(v) - hoje;
+    if(faltam<=0) faltam+=7;
+    let txt='';
+    if(faltam===0) txt='🎉 HOJE É SUA FOLGA!';
+    else if(faltam===1) txt='Amanhã é sua folga! 🎉';
+    else txt=`Faltam ${faltam} dias para sua folga (${diasSemana[v]})!`;
+    document.getElementById('textoFolga').textContent=txt;
 }
 
-// SALVAR E CARREGAR PRÉ-FECHAMENTO
-function salvarPre(){
-    localStorage.setItem('escalaPre', document.getElementById('escala-pre').innerHTML);
-    alert('✅ Escala de Pré-Fechamento salva!');
-}
-function carregarPre(){
-    const salva = localStorage.getItem('escalaPre');
-    if(salva) document.getElementById('escala-pre').innerHTML = salva;
-}
-
-// ===== CALCULADORA DE VALIDADE COM DIA DA SEMANA - CORRIGIDA =====
-const diasSemana = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-
-function formatarData(data){
-    const dia = String(data.getDate()).padStart(2,'0');
-    const mes = String(data.getMonth()+1).padStart(2,'0');
-    const ano = data.getFullYear();
-    return `${dia}/${mes}/${ano}`;
-}
-
-function obterDiaSemana(data){
-    return diasSemana[data.getDay()];
-}
-
-function usarHoje(){
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = String(hoje.getMonth()+1).padStart(2,'0');
-    const dia = String(hoje.getDate()).padStart(2,'0');
-    document.getElementById('dataFab').value = `${ano}-${mes}-${dia}`;
-}
-
+// ===== VALIDADE =====
+function formatarData(d){return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;}
+function usarHoje(){const d=new Date();document.getElementById('dataFab').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function calcularValidade(){
-    const dataFab = document.getElementById('dataFab').value;
-    const tipo = document.getElementById('tipoValidade').value;
-    const qtd = parseInt(document.getElementById('quantidade').value);
+    const fab=document.getElementById('dataFab').value;
+    const tipo=document.getElementById('tipoValidade').value;
+    const qtd=parseInt(document.getElementById('quantidade').value);
+    if(!fab||!qtd){alert('⚠️ Preencha tudo!');return;}
+    let dt=new Date(fab);
+    const inicio=formatarData(dt);
+    if(tipo==='dias') dt.setDate(dt.getDate()+qtd+1);
+    else if(tipo==='meses') {dt.setMonth(dt.getMonth()+qtd);dt.setDate(dt.getDate()+1);}
+    else {dt.setFullYear(dt.getFullYear()+qtd);dt.setDate(dt.getDate()+1);}
+    const fim=formatarData(dt);
+    document.getElementById('dtInicio').textContent=inicio;
+    document.getElementById('qtdValidade').textContent=qtd+' '+tipo;
+    document.getElementById('dtValidade').textContent=fim;
+    document.getElementById('caixaResultado').style.display='block';
+}
 
-    if(!dataFab || !qtd){
-        alert('⚠️ Preencha a data e a quantidade!');
+// ===== DESPERDÍCIO + FIREBASE =====
+function verificarOutros(){
+    document.getElementById('campoOutros').classList.toggle('visivel', document.getElementById('produto').value==='outros');
+}
+
+function adicionarLinha(item, key){
+    const tb = document.getElementById('corpoDesp');
+    const tr = document.createElement('tr');
+    tr.dataset.key = key;
+    tr.innerHTML = `
+        <td>${item.data}</td>
+        <td>${item.produto}</td>
+        <td>${item.qtd}</td>
+        <td>${item.motivo||'-'}</td>
+        <td><button class="vermelho" onclick="excluirRegistro('${key}')">✕</button></td>
+    `;
+    tb.appendChild(tr);
+}
+
+async function carregarRegistros(snapshot){
+    if(carregando) return;
+    carregando = true;
+    document.getElementById('corpoDesp').innerHTML = '';
+    const dados = snapshot.val();
+    if(dados){
+        Object.keys(dados).forEach(key=>adicionarLinha(dados[key], key));
+    }
+    atualizarResumo();
+    carregando = false;
+}
+
+async function adicionarDesperdicio(){
+    await verificarNovoDia();
+    let prod = document.getElementById('produto').value;
+    if(prod==='outros'){
+        const out = document.getElementById('produtoOutros').value.trim();
+        if(!out){alert('⚠️ Digite o nome do produto!');return;}
+        prod = out;
+    }
+    const qtd = parseInt(document.getElementById('qtdDesperdicio').value);
+    const mot = document.getElementById('motivo').value.trim();
+    if(!prod||!qtd){alert('⚠️ Selecione o produto e informe a quantidade!');return;}
+    const agora = new Date();
+    const horario = `${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
+    await DESPERDICIO_REF.push({
+        data: horario,
+        produto: prod,
+        qtd: qtd,
+        motivo: mot
+    });
+    document.getElementById('produto').value='';
+    document.getElementById('qtdDesperdicio').value='';
+    document.getElementById('motivo').value='';
+    document.getElementById('produtoOutros').value='';
+    document.getElementById('campoOutros').classList.remove('visivel');
+}
+
+async function excluirRegistro(key){
+    if(confirm('Excluir este registro?')){
+        await DESPERDICIO_REF.child(key).remove();
+    }
+}
+
+async function limparDesperdicios(){
+    if(confirm('Tem certeza? Isso apaga TODOS os registros da nuvem!')){
+        await DESPERDICIO_REF.remove();
+        await DATA_REF.set(getDataReferencia());
+    }
+}
+
+function atualizarResumo(){
+    const linhas = document.querySelectorAll('#corpoDesp tr');
+    if(linhas.length===0){
+        document.getElementById('resumo').textContent='Nenhum registro ainda.';
         return;
     }
-
-    let dt = new Date(dataFab);
-    const dataInicial = formatarData(dt);
-    const diaSemanaInicial = obterDiaSemana(dt);
-
-    // ✅ CORRIGIDO: soma +1 dia para compensar o atraso
-    if(tipo === 'dias') dt.setDate(dt.getDate() + qtd + 1);
-    else if(tipo === 'meses') { dt.setMonth(dt.getMonth() + qtd); dt.setDate(dt.getDate() + 1); }
-    else if(tipo === 'anos') { dt.setFullYear(dt.getFullYear() + qtd); dt.setDate(dt.getDate() + 1); }
-
-    const dataValidade = formatarData(dt);
-    const diaSemanaValidade = obterDiaSemana(dt);
-
-    document.getElementById('dtInicio').textContent = dataInicial;
-    document.getElementById('dsInicio').textContent = `📆 ${diaSemanaInicial}`;
-    document.getElementById('qtdValidade').textContent = `${qtd} ${tipo}`;
-    document.getElementById('dtValidade').textContent = dataValidade;
-    document.getElementById('dsValidade').textContent = `📆 ${diaSemanaValidade}`;
-    document.getElementById('caixaResultado').classList.add('mostrar');
+    let total=0;
+    const contagem={};
+    linhas.forEach(tr=>{
+        const tds = tr.querySelectorAll('td');
+        const q = parseInt(tds[2].textContent);
+        const p = tds[1].textContent;
+        total+=q;
+        contagem[p]=(contagem[p]||0)+q;
+    });
+    let txt = `<strong>Total geral: ${total} unidades</strong><br>`;
+    for(let p in contagem) txt += `${p}: ${contagem[p]} un. | `;
+    document.getElementById('resumo').innerHTML = txt;
 }
 
-function calcularPrazo(dias){
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = String(hoje.getMonth()+1).padStart(2,'0');
-    const dia = String(hoje.getDate()).padStart(2,'0');
-    document.getElementById('dataFab').value = `${ano}-${mes}-${dia}`;
-    document.getElementById('tipoValidade').value = 'dias';
-    document.getElementById('quantidade').value = dias;
-    
-    let dt = new Date(hoje);
-    // ✅ CORRIGIDO: soma +1 dia para compensar o atraso
-    dt.setDate(dt.getDate() + dias + 1);
-
-    const dataInicial = formatarData(hoje);
-    const diaSemanaInicial = obterDiaSemana(hoje);
-    const dataValidade = formatarData(dt);
-    const diaSemanaValidade = obterDiaSemana(dt);
-
-    document.getElementById('dtInicio').textContent = dataInicial;
-    document.getElementById('dsInicio').textContent = `📆 ${diaSemanaInicial}`;
-    document.getElementById('qtdValidade').textContent = `${dias} dias`;
-    document.getElementById('dtValidade').textContent = dataValidade;
-    document.getElementById('dsValidade').textContent = `📆 ${diaSemanaValidade}`;
-    document.getElementById('caixaResultado').classList.add('mostrar');
-}
-
-// CARREGAR TUDO AO ABRIR
+// ===== INICIALIZAR =====
 carregarFechamento();
 carregarPre();
-</script>
+verificarNovoDia();
 
+// Escutar mudanças em TEMPO REAL
+DESPERDICIO_REF.on('value', carregarRegistros, err=>{
+    document.getElementById('statusSinc').classList.remove('conectado');
+    document.getElementById('statusSinc').classList.add('desconectado');
+    document.getElementById('statusSinc').textContent='❌ Sem conexão';
+});
+
+// Monitorar conexão
+db.ref('.info/connected').on('value', snap=>{
+    const conectado = snap.val();
+    const st = document.getElementById('statusSinc');
+    if(conectado){
+        st.classList.remove('desconectado');
+        st.classList.add('conectado');
+        st.textContent='✅ Sincronizado em tempo real';
+    }else{
+        st.classList.remove('conectado');
+        st.classList.add('desconectado');
+        st.textContent='❌ Sem conexão';
+    }
+});
+</script>
 </body>
 </html>
