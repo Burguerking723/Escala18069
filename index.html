@@ -88,6 +88,7 @@
         .grupo-turno h3{color:#D62300;margin-bottom:15px;font-size:17px;}
         .tag-turno-manha{display:inline-block;background:#fbbf24;color:#78350f;padding:3px 10px;border-radius:20px;font-weight:600;font-size:13px;}
         .tag-turno-noite{display:inline-block;background:#3b82f6;color:white;padding:3px 10px;border-radius:20px;font-weight:600;font-size:13px;}
+        #campoOutroProduto{display:none;}
         @media(max-width:768px){
             aside{position:relative;width:100%;height:auto;}
             aside.minimizado{width:100%;}
@@ -196,7 +197,7 @@
         <div class="caixa-form">
             <h2>➕ Adicionar Desperdício</h2>
             <div class="linha-form"><label>Produto:</label>
-                <select id="produto">
+                <select id="produto" onchange="verificarOutro()">
                     <option value="">Selecione...</option>
                     <option value="Pão de Hambúrguer">Pão de Hambúrguer</option>
                     <option value="Pão de Whopper">Pão de Whopper</option>
@@ -206,7 +207,12 @@
                     <option value="Crispy">Crispy</option>
                     <option value="Pão Supremo">Pão Supremo</option>
                     <option value="Pão de Brioche">Pão de Brioche</option>
+                    <option value="outros">Outros ▾</option>
                 </select>
+            </div>
+            <div class="linha-form" id="campoOutroProduto">
+                <label>Digite o item:</label>
+                <input type="text" id="produtoOutro" placeholder="Ex: Bacon, molho, sobremesa...">
             </div>
             <div class="linha-form"><label>Quantidade:</label><input type="number" id="qtdDesperdicio" placeholder="Ex: 5" min="1"></div>
             <button class="sucesso" onclick="adicionarDesperdicio()">✅ Adicionar</button>
@@ -394,15 +400,32 @@ function calcularValidade(){
 }
 
 // DESPERDÍCIO
+function verificarOutro(){
+    const sel = document.getElementById('produto').value;
+    const campoOutro = document.getElementById('campoOutroProduto');
+    campoOutro.style.display = sel === 'outros' ? 'flex' : 'none';
+}
+
 async function adicionarDesperdicio(){
     await verificarNovoDia();
-    const prod = document.getElementById('produto').value;
+    let prod = document.getElementById('produto').value;
     const qtd = parseInt(document.getElementById('qtdDesperdicio').value);
-    if(!prod||!qtd){alert('⚠️ Preencha produto e quantidade!');return;}
+
+    if(prod === 'outros'){
+        prod = document.getElementById('produtoOutro').value.trim();
+        if(!prod){alert('⚠️ Digite o nome do item!');return;}
+    }
+    if(!prod){alert('⚠️ Selecione um produto!');return;}
+    if(!qtd || qtd <= 0){alert('⚠️ Informe uma quantidade válida!');return;}
+
     const agora = new Date();
     const horario = `${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
     await DESPERDICIO_REF.push({data:horario,produto:prod,qtd:qtd});
+
+    // Limpa os campos
     document.getElementById('produto').value='';
+    document.getElementById('produtoOutro').value='';
+    document.getElementById('campoOutroProduto').style.display='none';
     document.getElementById('qtdDesperdicio').value='';
 }
 
