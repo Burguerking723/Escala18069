@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Escala BK</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23FFEED8' width='200' height='200' rx='30'/%3E%3Cellipse cx='100' cy='55' rx='75' ry='35' fill='%23FF7B00'/%3E%3Cellipse cx='100' cy='145' rx='75' ry='35' fill='%23FF7B00'/%3E%3Ctext x='100' y='115' font-size='70' font-weight='bold' text-anchor='middle' fill='%23D62300' font-family='Arial'%3EBK%3C/text%3E%3C/svg%3E">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root{
+            --bk-laranja:#FF7B00;
+            --bk-vermelho:#D62300;
+            --bk-vermelho-escuro:#B61C00;
+            --bk-escuro:#1F1F1F;
+            --fundo-pagina:linear-gradient(135deg,#ff7b00,#d62300);
+            --fundo-card:#fff;
+            --fundo-form:#FFF4E8;
+            --texto-padrao:#333;
+            --borda-suave:#FFC8B0;
+        }
+
+        body.escuro{
+            --fundo-pagina:linear-gradient(135deg,#1a1a2e,#16213e);
+            --fundo-card:#1f2937;
+            --fundo-form:#374151;
+            --texto-padrao:#e5e7eb;
+            --borda-suave:#4b5563;
+        }
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Poppins',sans-serif;
+        }
+
+        html,body{
+            width:100%;
+            min-height:100vh;
+            overflow-x:hidden;
+        }
+
+        body{
+            background:var(--fundo-pagina);
+            color:var(--texto-padrao);
+            transition:background .4s ease,color .4s ease;
+        }
+
+        ::-webkit-scrollbar{
+            width:8px;
+            height:8px;
+        }
+
+        ::-webkit-scrollbar-track{
+            background:rgba(255,255,255,.1);
+            border-radius:4px;
+        }
+
+        ::-webkit-scrollbar-thumb{
+            background:var(--bk-vermelho);
+            border-radius:4px;
+        }
+
+        aside{
+            width:220px;
+            background:linear-gradient(180deg,#1F1F1F,#2A2A2A);
+            color:white;
+            padding:20px 15px;
+            position:fixed;
+            top:0;
+            left:0;
+            height:100vh;
+            overflow-y:auto;
+            transition:width .35s ease;
+            z-index:100;
+            box-shadow:4px 0 20px rgba(0,0,0,.3);
+        }
+
+        aside.minimizado{
+            width:70px;
+            padding:15px 8px;
+        }
+
+        aside.minimizado .logo h1 span,
+        aside.minimizado .logo p,
+        aside.minimizado .menu a span{
+            display:none;
+        }
+
+        aside.minimizado .logo h1{
+            font-size:24px;
+        }
+
+        aside.minimizado .menu a{
+            text-align:center;
+            padding:14px 0;
+            font-size:20px;
+            justify-content:center;
+        }
+
+        .btn-toggle{
+            width:100%;
+            padding:10px;
+            margin-bottom:10px;
+            border:none;
+            border-radius:12px;
+            background:linear-gradient(90deg,#FF7B00,#FF8C00);
+            color:#000;
+            cursor:pointer;
+            font-weight:700;
+            font-size:20px;
+            transition:all .3s ease;
+            box-shadow:0 4px 12px rgba(255,123,0,.4);
+        }
+
+        .btn-toggle:hover{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            color:white;
+            transform:scale(1.03);
+        }
+
+        .btn-tema{
+            background:#374151;
+            color:white;
+            font-size:14px;
+            padding:8px;
+            margin-bottom:20px;
+        }
+
+        .logo{
+            text-align:center;
+            margin-bottom:24px;
+            padding-bottom:16px;
+            border-bottom:1px solid rgba(255,123,0,.3);
+        }
+
+        .logo h1{
+            font-size:20px;
+            font-weight:700;
+            background:linear-gradient(90deg,#fff,#FFD700);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
+
+        .logo p{
+            font-size:12px;
+            opacity:.8;
+            margin-top:6px;
+            color:#FF7B00;
+            font-weight:500;
+        }
+
+        .status-sinc{
+            font-size:12px;
+            padding:6px 10px;
+            border-radius:8px;
+            margin-top:10px;
+            text-align:center;
+        }
+
+        .status-sinc.conectado{
+            background:#d1fae5;
+            color:#065f46;
+        }
+
+        .status-sinc.desconectado{
+            background:#fee2e2;
+            color:#991b1b;
+        }
+
+        .menu a{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            color:white;
+            text-decoration:none;
+            padding:14px 12px;
+            margin-bottom:8px;
+            border-radius:12px;
+            transition:all .3s ease;
+            font-weight:600;
+            cursor:pointer;
+            font-size:14px;
+            border:1px solid transparent;
+        }
+
+        .menu a:hover{
+            background:linear-gradient(90deg,rgba(255,123,0,.2),rgba(214,35,0,.2));
+            border-color:#FF7B00;
+            transform:translateX(6px);
+        }
+
+        .menu a.ativo{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            box-shadow:0 4px 12px rgba(214,35,0,.4);
+        }
+
+        main{
+            width:calc(100% - 220px);
+            min-height:100vh;
+            padding:30px 35px;
+            margin-left:220px;
+            transition:all .35s ease;
+        }
+
+        main.expandido{
+            width:calc(100% - 70px);
+            margin-left:70px;
+        }
+
+        .pagina{
+            display:none;
+            animation:aparecer .4s ease-out;
+        }
+
+        .pagina.ativa{
+            display:block;
+        }
+
+        @keyframes aparecer{
+            from{
+                opacity:0;
+                transform:translateY(15px);
+            }
+            to{
+                opacity:1;
+                transform:translateY(0);
+            }
+        }
+
+        header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:30px;
+            flex-wrap:wrap;
+            gap:15px;
+        }
+
+        header h2{
+            color:white;
+            font-size:26px;
+            font-weight:700;
+            text-shadow:0 2px 8px rgba(0,0,0,.2);
+        }
+
+        header p{
+            color:rgba(255,255,255,.9);
+            font-weight:500;
+            margin-top:4px;
+        }
+
+        .relogio{
+            background:white;
+            padding:12px 20px;
+            border-radius:14px;
+            font-weight:700;
+            color:#D62300;
+            box-shadow:0 8px 24px rgba(214,35,0,.25);
+            font-size:14px;
+            border:3px solid #FF7B00;
+        }
+
+        .tabela,
+        .caixa-form{
+            background:var(--fundo-card);
+            border-radius:16px;
+            padding:28px;
+            box-shadow:0 8px 24px rgba(214,35,0,.25);
+            margin-bottom:28px;
+            overflow:auto;
+            border-top:5px solid transparent;
+            border-image:linear-gradient(90deg,#FF7B00,#D62300) 1;
+            color:var(--texto-padrao);
+        }
+
+        .tabela h2,
+        .caixa-form h2{
+            color:#D62300;
+            margin-bottom:20px;
+            font-size:20px;
+            font-weight:700;
+        }
+
+        table{
+            width:100%;
+            border-collapse:separate;
+            border-spacing:0;
+            border-radius:12px;
+            overflow:hidden;
+        }
+
+        th{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            color:white;
+            padding:14px 10px;
+            font-weight:700;
+            font-size:14px;
+            text-transform:uppercase;
+            letter-spacing:.5px;
+        }
+
+        td{
+            padding:12px 10px;
+            text-align:center;
+            border-bottom:1px solid #FFE4D6;
+            font-size:14px;
+            transition:background .25s ease;
+        }
+
+        body.escuro td{
+            border-bottom:1px solid #374151;
+        }
+
+        tr:nth-child(even) td{
+            background:#FFF8F2;
+        }
+
+        body.escuro tr:nth-child(even) td{
+            background:#374151;
+        }
+
+        tr:hover td{
+            background:#FFE4D6;
+        }
+
+        body.escuro tr:hover td{
+            background:#4b5563;
+        }
+
+        button{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            color:white;
+            border:none;
+            padding:10px 18px;
+            border-radius:10px;
+            font-size:14px;
+            cursor:pointer;
+            transition:all .3s ease;
+            font-weight:600;
+            margin-right:8px;
+            margin-top:8px;
+            box-shadow:0 4px 12px rgba(214,35,0,.3);
+        }
+
+        button:hover{
+            transform:translateY(-2px);
+            box-shadow:0 6px 16px rgba(214,35,0,.4);
+        }
+
+        button:active{
+            transform:translateY(0);
+        }
+
+        button.sucesso{
+            background:linear-gradient(90deg,#10b981,#059669);
+        }
+
+        button.azul{
+            background:linear-gradient(90deg,#3b82f6,#2563eb);
+        }
+
+        button.vermelho{
+            background:linear-gradient(90deg,#ef4444,#dc2626);
+            padding:5px 8px;
+            font-size:12px;
+            margin:0;
+        }
+
+        button:disabled{
+            opacity:.5;
+            cursor:not-allowed;
+            transform:none;
+        }
+
+        .linha-form{
+            display:flex;
+            gap:12px;
+            flex-wrap:wrap;
+            margin-bottom:15px;
+            align-items:center;
+        }
+
+        .linha-form label{
+            font-weight:600;
+            color:#B61C00;
+            min-width:100px;
+        }
+
+        .linha-form input,
+        .linha-form select,
+        .linha-form textarea{
+            padding:10px 14px;
+            border:2px solid var(--borda-suave);
+            border-radius:10px;
+            font-size:15px;
+            flex:1;
+            min-width:180px;
+            transition:all .3s ease;
+            background:transparent;
+            color:var(--texto-padrao);
+        }
+
+        .linha-form textarea{
+            min-height:90px;
+            resize:vertical;
+        }
+
+        .linha-form input:focus,
+        .linha-form select:focus,
+        .linha-form textarea:focus{
+            outline:none;
+            border-color:#FF7B00;
+            box-shadow:0 0 0 4px rgba(255,123,0,.15);
+        }
+
+        .aviso-diario{
+            background:#fff3cd;
+            border-left:5px solid #ffc107;
+            padding:12px 16px;
+            border-radius:10px;
+            margin-bottom:18px;
+            color:#856404;
+            font-weight:500;
+        }
+
+        .aviso-sinc{
+            background:#dbeafe;
+            border-left:5px solid #3b82f6;
+            padding:10px 14px;
+            border-radius:8px;
+            margin:12px 0;
+            color:#1e40af;
+            font-size:13px;
+        }
+
+        .grupo-turno{
+            background:var(--fundo-form);
+            border-radius:12px;
+            padding:20px;
+            margin-bottom:20px;
+        }
+
+        .grupo-turno h3{
+            color:#D62300;
+            margin-bottom:15px;
+            font-size:17px;
+        }
+
+        .tag-turno-manha,
+        .tag-turno-noite{
+            display:inline-block;
+            padding:3px 10px;
+            border-radius:20px;
+            font-weight:600;
+            font-size:13px;
+        }
+
+        .tag-turno-manha{
+            background:#fbbf24;
+            color:#78350f;
+        }
+
+        .tag-turno-noite{
+            background:#3b82f6;
+            color:white;
+        }
+
+        .celula-editavel{
+            cursor:default;
+            transition:background .2s;
+        }
+
+        .celula-editavel.pode-editar{
+            cursor:pointer;
+        }
+
+        .celula-editavel.pode-editar:hover{
+            background:rgba(255,123,0,.15);
+        }
+
+        .celula-editavel input{
+            width:100%;
+            height:100%;
+            border:none;
+            text-align:center;
+            font-size:14px;
+            background:transparent;
+            color:var(--texto-padrao);
+            padding:0;
+            outline:none;
+        }
+
+        .senha-container{
+            margin:15px 0;
+            padding:15px;
+            background:#FFF4E8;
+            border-radius:12px;
+        }
+
+        body.escuro .senha-container{
+            background:#374151;
+        }
+
+        .status-edicao{
+            display:inline-block;
+            margin-left:10px;
+            padding:4px 10px;
+            border-radius:20px;
+            font-size:13px;
+            font-weight:600;
+        }
+
+        .status-edicao.liberado{
+            background:#d1fae5;
+            color:#065f46;
+        }
+
+        .status-edicao.bloqueado{
+            background:#fee2e2;
+            color:#991b1b;
+        }
+
+        #campoOutroProduto{
+            display:none;
+        }
+
+        #caixaResultado{
+            margin-top:20px;
+            padding:20px;
+            background:#FFF4E8;
+            border-radius:12px;
+            display:none;
+        }
+
+        @media(max-width:768px){
+            aside{
+                position:relative;
+                width:100%;
+                height:auto;
+            }
+
+            aside.minimizado{
+                width:100%;
+            }
+
+            main,
+            main.expandido{
+                width:100%;
+                margin-left:0;
+                padding:20px;
+            }
+
+            table{
+                font-size:13px;
+                min-width:650px;
+            }
+
+            th,
+            td{
+                padding:8px 4px;
+            }
+
+            .linha-form{
+                flex-direction:column;
+                align-items:stretch;
+            }
+
+            .status-edicao{
+                margin-left:0;
+                margin-top:8px;
+            }
+        }
+
+        @media print{
+            aside,
+            button,
+            .senha-container,
+            header .relogio{
+                display:none !important;
+            }
+
+            main{
+                width:100%;
+                margin:0;
+                padding:10px;
+            }
+
+            body{
+                background:white;
+            }
+
+            header h2,
+            header p{
+                color:#000;
+                text-shadow:none;
+            }
+
+            .tabela{
+                box-shadow:none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<aside id="sidebar">
+    <button class="btn-toggle" onclick="toggleMenu()">◀</button>
+    <button class="btn-toggle btn-tema" onclick="alternarTema()">🌙 Tema</button>
+
+    <div class="logo">
+        <h1>🍔 <span>BK Escala</span></h1>
+        <p>Sistema de Escala Oficial</p>
+    </div>
+
+    <div class="status-sinc conectado" id="statusSinc">
+        ✅ Sincronizado em tempo real
+    </div>
+
+    <nav class="menu">
+        <a class="ativo" onclick="mostrarPagina('fechamento', this)">📋 <span>Escala de Fechamento</span></a>
+        <a onclick="mostrarPagina('pre-fechamento', this)">🔧 <span>Escala de Pré-Fechamento</span></a>
+        <a onclick="mostrarPagina('validade', this)">📅 <span>Validade</span></a>
+        <a onclick="mostrarPagina('desperdicio', this)">📉 <span>Desperdício</span></a>
+        <a onclick="mostrarPagina('breaks', this)">🍔 <span>Controle de Breaks</span></a>
+        <a onclick="mostrarPagina('utilidades', this)">🛠️ <span>Utilidades</span></a>
+        <a onclick="mostrarPagina('qrcode', this)">📱 <span>Acesso Rápido</span></a>
+    </nav>
+</aside>
+
+<main id="conteudo">
+
+    <!-- ================= ESCALA DE FECHAMENTO ================= -->
+    <div id="pag-fechamento" class="pagina ativa">
+        <header>
+            <div>
+                <h2>📋 Escala de Fechamento</h2>
+                <p>Sistema de Escala BK • Semana de fechamento</p>
+            </div>
+            <div class="relogio" id="hora-fech"></div>
+        </header>
+
+        <div class="tabela">
+            <h2>Escala de Fechamento</h2>
+
+            <div class="senha-container">
+                <div class="linha-form">
+                    <label>🔐 Senha para editar:</label>
+                    <input type="password" id="senhaFech" placeholder="Digite a senha para liberar edição">
+                    <button class="azul" onclick="liberarEdicaoFech()">🔓 Liberar Edição</button>
+                    <span class="status-edicao bloqueado" id="statusEditFechado">🔒 Bloqueado</span>
+                </div>
+
+                <div id="botoesSalvarFech" style="display:none;margin-top:10px;">
+                    <button class="sucesso" onclick="salvarEscalaFechamento()">💾 Salvar Escala</button>
+                    <button onclick="recarregarEscalaFech()">🔄 Restaurar Original</button>
+                    <span style="color:#666;font-size:13px;margin-left:10px;">
+                        ✅ Salvo em todos os dispositivos
+                    </span>
+                </div>
+            </div>
+
+            <table id="tabelaFechamento">
+                <thead>
+                    <tr>
+                        <th>Dia</th>
+                        <th>Folga</th>
+                        <th>Daniel</th>
+                        <th>Mariana</th>
+                        <th>Julyan</th>
+                        <th>Thuanney</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoFechamento"></tbody>
+            </table>
+
+            <p style="margin-top:12px;font-size:13px;color:#666;">
+                📌 Todos veem a escala. Digite a senha acima para poder editar.
+            </p>
+
+            <button onclick="window.print()">🖨 Imprimir</button>
+        </div>
+    </div>
+
+    <!-- ================= PRÉ-FECHAMENTO ================= -->
+    <div id="pag-pre-fechamento" class="pagina">
+        <header>
+            <div>
+                <h2>🔧 Escala de Pré-Fechamento</h2>
+                <p>Tema Burger King • Semana de fechamento</p>
+            </div>
+            <div class="relogio" id="hora-pre"></div>
+        </header>
+
+        <div class="tabela">
+            <h2>Escala de Pré-Fechamento</h2>
+
+            <div class="senha-container">
+                <div class="linha-form">
+                    <label>🔐 Senha para editar:</label>
+                    <input type="password" id="senhaPre" placeholder="Digite a senha para liberar edição">
+                    <button class="azul" onclick="liberarEdicaoPre()">🔓 Liberar Edição</button>
+                    <span class="status-edicao bloqueado" id="statusEditPre">🔒 Bloqueado</span>
+                </div>
+
+                <div id="botoesSalvarPre" style="display:none;margin-top:10px;">
+                    <button class="sucesso" onclick="salvarEscalaPre()">💾 Salvar Escala</button>
+                    <button onclick="recarregarEscalaPre()">🔄 Restaurar Original</button>
+                    <span style="color:#666;font-size:13px;margin-left:10px;">
+                        ✅ Salvo em todos os dispositivos
+                    </span>
+                </div>
+            </div>
+
+            <table id="tabelaPre">
+                <thead>
+                    <tr>
+                        <th>Dia</th>
+                        <th>Gabriel</th>
+                        <th>Amanda</th>
+                        <th>Dandara</th>
+                        <th>Luísa</th>
+                        <th>Júlia</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoPre"></tbody>
+            </table>
+
+            <p style="margin-top:12px;font-size:13px;color:#666;">
+                📌 Todos veem a escala. Digite a senha acima para poder editar.
+            </p>
+
+            <button onclick="window.print()">🖨 Imprimir</button>
+        </div>
+    </div>
+
+    <!-- ================= VALIDADE ================= -->
+    <div id="pag-validade" class="pagina">
+        <header>
+            <div>
+                <h2>📅 Controle de Validade</h2>
+                <p>Validades padrão e calculadora</p>
+            </div>
+            <div class="relogio" id="hora3"></div>
+        </header>
+
+        <div class="tabela">
+            <h2>📋 Validades Padrão</h2>
+
+            <table>
+                <tr><th>Produto</th><th>Validade</th></tr>
+                <tr><td>Maionese</td><td>7 dias</td></tr>
+                <tr><td>Molho Stacker</td><td>3 dias</td></tr>
+                <tr><td>Barbecue</td><td>7 dias</td></tr>
+                <tr><td>Cheddar</td><td>5 dias</td></tr>
+                <tr><td>Picles</td><td>7 dias</td></tr>
+                <tr><td>Pimenta</td><td>7 dias</td></tr>
+                <tr><td>Queijo</td><td>4 dias</td></tr>
+            </table>
+        </div>
+
+        <div class="caixa-form">
+            <h2>🔍 Calcular Validade</h2>
+
+            <div class="linha-form">
+                <label>Data Fabricação:</label>
+                <input type="date" id="dataFab">
+            </div>
+
+            <div class="linha-form">
+                <label>Validade:</label>
+                <select id="tipoValidade">
+                    <option value="dias">Dias</option>
+                    <option value="meses">Meses</option>
+                </select>
+            </div>
+
+            <div class="linha-form">
+                <label>Quantidade:</label>
+                <input type="number" id="quantidade" placeholder="Ex: 7" min="1">
+            </div>
+
+            <button onclick="calcularValidade()">🧮 Calcular</button>
+            <button onclick="usarHoje()">📍 Hoje</button>
+
+            <div id="caixaResultado">
+                <h3>✅ Válido até: <span id="dtValidade"></span></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DESPERDÍCIO ================= -->
+    <div id="pag-desperdicio" class="pagina">
+        <header>
+            <div>
+                <h2>📉 Controle de Desperdício</h2>
+                <p>Até 03:00 do dia seguinte</p>
+            </div>
+            <div class="relogio" id="horaDesperdicio"></div>
+        </header>
+
+        <div class="aviso-diario">
+            ⚠️ Registros válidos até às <strong>03:00 do dia seguinte</strong>.
+        </div>
+
+        <div class="aviso-sinc">
+            ✅ Sincronização em tempo real ativa!
+        </div>
+
+        <div class="caixa-form">
+            <h2>➕ Adicionar Desperdício</h2>
+
+            <div class="linha-form">
+                <label>Produto:</label>
+                <select id="produto" onchange="verificarOutro()">
+                    <option value="">Selecione...</option>
+                    <option value="Pão de Hambúrguer">Pão de Hambúrguer</option>
+                    <option value="Pão de Whopper">Pão de Whopper</option>
+                    <option value="Carne de Hambúrguer">Carne de Hambúrguer</option>
+                    <option value="Carne de Whopper">Carne de Whopper</option>
+                    <option value="Chicken">Chicken</option>
+                    <option value="Crispy">Crispy</option>
+                    <option value="Pão Supremo">Pão Supremo</option>
+                    <option value="Pão de Brioche">Pão de Brioche</option>
+                    <option value="outros">Outros ▾</option>
+                </select>
+            </div>
+
+            <div class="linha-form" id="campoOutroProduto">
+                <label>Digite o item:</label>
+                <input type="text" id="produtoOutro" placeholder="Ex: Bacon, molho, sobremesa...">
+            </div>
+
+            <div class="linha-form">
+                <label>Quantidade:</label>
+                <input type="number" id="qtdDesperdicio" placeholder="Ex: 5" min="1">
+            </div>
+
+            <button class="sucesso" onclick="adicionarDesperdicio()">✅ Adicionar</button>
+            <button class="vermelho" onclick="limparDesperdicios()">🗑️ Zerar</button>
+        </div>
+
+        <div class="tabela">
+            <h2>📋 Registros</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Horário</th>
+                        <th>Produto</th>
+                        <th>Qtd</th>
+                        <th>Excluir</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoDesp"></tbody>
+            </table>
+
+            <p id="resumo" style="margin-top:15px;">
+                <strong>Total:</strong> 0 unidades
+            </p>
+        </div>
+    </div>
+
+    <!-- ================= BREAKS ================= -->
+    <div id="pag-breaks" class="pagina">
+        <header>
+            <div>
+                <h2>🍔 Controle de Breaks</h2>
+                <p>Refeições dos funcionários</p>
+            </div>
+            <div class="relogio" id="horaBreaks"></div>
+        </header>
+
+        <div class="aviso-diario">
+            ⚠️ Registros expiram às <strong>03:00 do dia seguinte</strong>.
+        </div>
+
+        <div class="aviso-sinc">
+            ✅ Digite livremente os itens consumidos
+        </div>
+
+        <div class="caixa-form">
+            <h2>📋 Dados do Dia</h2>
+
+            <div class="linha-form">
+                <label>Data:</label>
+                <input type="date" id="dataBreak">
+            </div>
+
+            <div class="linha-form">
+                <label>Gerente de Turno:</label>
+                <input type="text" id="gerenteTurno" placeholder="Nome do gerente">
+            </div>
+        </div>
+
+        <div class="grupo-turno">
+            <h3>☀️ Turno da Manhã <span class="tag-turno-manha">MANHÃ</span></h3>
+
+            <div class="linha-form">
+                <label>Funcionário:</label>
+                <input type="text" id="nomeFuncManha" placeholder="Nome">
+            </div>
+
+            <div class="linha-form" style="align-items:flex-start;">
+                <label>Itens consumidos:</label>
+                <textarea id="itensManha" placeholder="Digite tudo que consumiu"></textarea>
+            </div>
+
+            <button class="sucesso" onclick="adicionarBreak('manha')">
+                ✅ Registrar Break Manhã
+            </button>
+        </div>
+
+        <div class="grupo-turno">
+            <h3>🌙 Turno da Noite <span class="tag-turno-noite">NOITE</span></h3>
+
+            <div class="linha-form">
+                <label>Funcionário:</label>
+                <input type="text" id="nomeFuncNoite" placeholder="Nome">
+            </div>
+
+            <div class="linha-form" style="align-items:flex-start;">
+                <label>Itens consumidos:</label>
+                <textarea id="itensNoite" placeholder="Digite tudo que consumiu"></textarea>
+            </div>
+
+            <button class="sucesso" onclick="adicionarBreak('noite')">
+                ✅ Registrar Break Noite
+            </button>
+        </div>
+
+        <div class="tabela">
+            <h2>📋 Registros de Breaks</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Turno</th>
+                        <th>Funcionário</th>
+                        <th>Itens Consumidos</th>
+                        <th>Gerente</th>
+                        <th>Horário</th>
+                        <th>Excluir</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoBreaks"></tbody>
+            </table>
+
+            <p id="resumoBreaks" style="margin-top:15px;">
+                <strong>Total:</strong> 0 registros
+            </p>
+
+            <button class="vermelho" onclick="limparBreaks()">🗑️ Zerar Tudo</button>
+        </div>
+    </div>
+
+    <!-- ================= UTILIDADES ================= -->
+    <div id="pag-utilidades" class="pagina">
+        <header>
+            <div>
+                <h2>🛠️ Utilidades</h2>
+                <p>Ferramentas práticas</p>
+            </div>
+            <div class="relogio" id="hora4"></div>
+        </header>
+
+        <div class="caixa-form">
+            <h2>🌴 Dias até a Folga</h2>
+
+            <div class="linha-form">
+                <label>Funcionário:</label>
+
+                <select id="funcionario" onchange="calcularFolga()">
+                    <option value="">Selecione</option>
+                    <option value="1">Dandara (Segunda)</option>
+                    <option value="2">Luísa (Terça)</option>
+                    <option value="3">Gabriel (Quarta)</option>
+                    <option value="4">Amanda (Quinta)</option>
+                    <option value="5">Julyan (Sexta)</option>
+                </select>
+            </div>
+
+            <div id="resFolga" style="margin-top:15px;padding:15px;background:#FFF4E8;border-radius:12px;display:none;">
+                <p id="textoFolga"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= QR CODE ================= -->
+    <div id="pag-qrcode" class="pagina">
+        <header>
+            <div>
+                <h2>📱 Acesso Rápido</h2>
+                <p>Escaneie para abrir</p>
+            </div>
+            <div class="relogio" id="hora5"></div>
+        </header>
+
+        <div class="tabela" style="text-align:center;">
+            <h2>📱 QR Code</h2>
+
+            <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://burguerking723.github.io/Escala18069/"
+                alt="QR Code"
+                width="250"
+                height="250"
+            >
+
+            <p style="margin-top:15px;">
+                https://burguerking723.github.io/Escala18069/
+            </p>
+        </div>
+    </div>
+
+</main>
+
+<script>
+/* =========================================================
+   FIREBASE
+   ========================================================= */
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCPfk6RUVWYZ8vQ80j-HSPrIK42yzwIA-Nk",
+    authDomain: "bk-escala.firebaseapp.com",
+    databaseURL: "https://bk-escala-default-rtdb.firebaseio.com",
+    projectId: "bk-escala",
+    storageBucket: "bk-escala.firebasestorage.app",
+    messagingSenderId: "191531981744",
+    appId: "1:191531981744:web:9f87cc5ae24bfa1e3c31475"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+const DESPERDICIO_REF = db.ref("desperdicio");
+const BREAKS_REF = db.ref("breaks");
+const DATA_REF = db.ref("dataReferencia");
+const ESCALA_FECHAMENTO_REF = db.ref("escala_fechamento");
+const ESCALA_PRE_REF = db.ref("escala_pre_fechamento");
+
+/* =========================================================
+   CONFIGURAÇÕES
+   ========================================================= */
+
+const SENHA_EDICAO = "292722";
+
+let podeEditarFechamento = false;
+let podeEditarPre = false;
+
+let escalaFechamentoAtual = [];
+let escalaPreAtual = [];
+
+const diasSemana = [
+    "Domingo",
+    "Segunda-feira",
+    "Terça-feira",
+    "Quarta-feira",
+    "Quinta-feira",
+    "Sexta-feira",
+    "Sábado"
+];
+
+const sidebar = document.getElementById("sidebar");
+const conteudo = document.getElementById("conteudo");
+
+/* =========================================================
+   ESCALA PADRÃO DE FECHAMENTO
+   ========================================================= */
+
+const ESCALA_FECHAMENTO_PADRAO = [
+    {
+        dia:"Segunda",
+        folga:"Julyan",
+        c1:"Broiler",
+        c2:"Coifa",
+        c3:"— FOLGA —",
+        c4:"Louça + Mesa"
+    },
+    {
+        dia:"Terça",
+        folga:"Thuanney",
+        c1:"Mesa + Broiler",
+        c2:"Louça",
+        c3:"Coifa",
+        c4:"— FOLGA —"
+    },
+    {
+        dia:"Quarta",
+        folga:"Daniel",
+        c1:"— FOLGA —",
+        c2:"Broiler",
+        c3:"Mesa + Coifa",
+        c4:"Louça"
+    },
+    {
+        dia:"Quinta",
+        folga:"Mariana",
+        c1:"Coifa",
+        c2:"— FOLGA —",
+        c3:"Broiler + Mesa",
+        c4:"Louça"
+    },
+    {
+        dia:"Sexta",
+        folga:"—",
+        c1:"Broiler",
+        c2:"Coifa",
+        c3:"Louça",
+        c4:"Mesa"
+    },
+    {
+        dia:"Sábado",
+        folga:"—",
+        c1:"Coifa",
+        c2:"Broiler",
+        c3:"Mesa",
+        c4:"Louça"
+    },
+    {
+        dia:"Domingo",
+        folga:"—",
+        c1:"Louça + Mesa",
+        c2:"Broiler",
+        c3:"Coifa",
+        c4:"Mesa"
+    }
+];
+
+/* =========================================================
+   ESCALA PADRÃO DE PRÉ-FECHAMENTO
+   ========================================================= */
+
+const ESCALA_PRE_PADRAO = [
+    {
+        dia:"Segunda",
+        g:"Freezer",
+        a:"Batateira",
+        d:"Folga",
+        l:"Freezer Frango",
+        j:"Freezer Carne ■ Lixeiras"
+    },
+    {
+        dia:"Terça",
+        g:"Freezer Frango",
+        a:"Freezer Carne",
+        d:"Freezer",
+        l:"Batateira",
+        j:"Folga"
+    },
+    {
+        dia:"Quarta",
+        g:"Folga",
+        a:"Freezer Frango",
+        d:"Freezer Carne ■ Lixeiras",
+        l:"Freezer",
+        j:"Batateira"
+    },
+    {
+        dia:"Quinta",
+        g:"Batateira",
+        a:"Folga",
+        d:"Freezer Frango",
+        l:"Freezer Carne ■ Lixeiras",
+        j:"Freezer"
+    },
+    {
+        dia:"Sexta",
+        g:"Freezer Carne",
+        a:"Freezer",
+        d:"Batateira",
+        l:"Folga",
+        j:"Freezer Frango ■ Lixeiras"
+    },
+    {
+        dia:"Sábado",
+        g:"Lixeiras ■ Freezer Frango",
+        a:"Freezer Carne",
+        d:"Freezer",
+        l:"Batateira",
+        j:"—"
+    },
+    {
+        dia:"Domingo",
+        g:"Freezer",
+        a:"Batateira",
+        d:"Lixeiras ■ Freezer Carne",
+        l:"Freezer Frango",
+        j:"—"
+    }
+];
+
+/* =========================================================
+   FUNÇÕES DE EDIÇÃO
+   ========================================================= */
+
+function liberarEdicaoFech(){
+    const senha = document.getElementById("senhaFech").value.trim();
+
+    if(senha === SENHA_EDICAO){
+        podeEditarFechamento = true;
+
+        const status = document.getElementById("statusEditFechado");
+        status.textContent = "✅ Liberado";
+        status.classList.remove("bloqueado");
+        status.classList.add("liberado");
+
+        document.getElementById("botoesSalvarFech").style.display = "block";
+
+        desenharTabelaFechamento();
+
+        alert("✅ Edição liberada! Agora clique nas células para alterar.");
+    }else{
+        alert("❌ Senha incorreta! A escala continua apenas para visualização.");
+    }
+}
+
+function liberarEdicaoPre(){
+    const senha = document.getElementById("senhaPre").value.trim();
+
+    if(senha === SENHA_EDICAO){
+        podeEditarPre = true;
+
+        const status = document.getElementById("statusEditPre");
+        status.textContent = "✅ Liberado";
+        status.classList.remove("bloqueado");
+        status.classList.add("liberado");
+
+        document.getElementById("botoesSalvarPre").style.display = "block";
+
+        desenharTabelaPre();
+
+        alert("✅ Edição liberada! Agora clique nas células para alterar.");
+    }else{
+        alert("❌ Senha incorreta! A escala continua apenas para visualização.");
+    }
+}
+
+/* =========================================================
+   ESCALA DE FECHAMENTO
+   ========================================================= */
+
+function desenharTabelaFechamento(){
+    const corpo = document.getElementById("corpoFechamento");
+
+    corpo.innerHTML = "";
+
+    escalaFechamentoAtual.forEach((linha, idx) => {
+
+        const tr = document.createElement("tr");
+
+        const classeEditar = podeEditarFechamento
+            ? "celula-editavel pode-editar"
+            : "celula-editavel";
+
+        tr.innerHTML = `
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="dia">${escapeHTML(linha.dia)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="folga">${escapeHTML(linha.folga)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="c1">${escapeHTML(linha.c1)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="c2">${escapeHTML(linha.c2)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="c3">${escapeHTML(linha.c3)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="c4">${escapeHTML(linha.c4)}</td>
+        `;
+
+        corpo.appendChild(tr);
+    });
+
+    if(podeEditarFechamento){
+        document.querySelectorAll("#corpoFechamento td.celula-editavel")
+            .forEach(td => configurarEdicaoCelula(td, "fechamento"));
+    }
+}
+
+function salvarEscalaFechamento(){
+    if(!podeEditarFechamento){
+        alert("🔒 Libere a edição primeiro.");
+        return;
+    }
+
+    ESCALA_FECHAMENTO_REF
+        .set(escalaFechamentoAtual)
+        .then(() => {
+            alert("✅ Escala salva! Atualizada em tempo real para todos.");
+        })
+        .catch(error => {
+            console.error(error);
+            alert("❌ Não foi possível salvar. Verifique as regras do Firebase.");
+        });
+}
+
+function recarregarEscalaFech(){
+    if(!podeEditarFechamento){
+        alert("🔒 Libere a edição primeiro.");
+        return;
+    }
+
+    if(confirm("Restaurar escala padrão?")){
+        escalaFechamentoAtual =
+            JSON.parse(JSON.stringify(ESCALA_FECHAMENTO_PADRAO));
+
+        ESCALA_FECHAMENTO_REF
+            .set(escalaFechamentoAtual)
+            .then(() => {
+                desenharTabelaFechamento();
+                alert("✅ Restaurada e salva!");
+            })
+            .catch(error => {
+                console.error(error);
+                alert("❌ Erro ao restaurar a escala.");
+            });
+    }
+}
+
+function carregarEscalaFechamento(snap){
+    const dados = snap.val();
+
+    escalaFechamentoAtual = dados
+        ? dados
+        : JSON.parse(JSON.stringify(ESCALA_FECHAMENTO_PADRAO));
+
+    desenharTabelaFechamento();
+}
+
+/* =========================================================
+   ESCALA DE PRÉ-FECHAMENTO
+   ========================================================= */
+
+function desenharTabelaPre(){
+    const corpo = document.getElementById("corpoPre");
+
+    corpo.innerHTML = "";
+
+    escalaPreAtual.forEach((linha, idx) => {
+
+        const tr = document.createElement("tr");
+
+        const classeEditar = podeEditarPre
+            ? "celula-editavel pode-editar"
+            : "celula-editavel";
+
+        tr.innerHTML = `
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="dia">${escapeHTML(linha.dia)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="g">${escapeHTML(linha.g)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="a">${escapeHTML(linha.a)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="d">${escapeHTML(linha.d)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="l">${escapeHTML(linha.l)}</td>
+            <td class="${classeEditar}" data-idx="${idx}" data-campo="j">${escapeHTML(linha.j)}</td>
+        `;
+
+        corpo.appendChild(tr);
+    });
+
+    if(podeEditarPre){
+        document.querySelectorAll("#corpoPre td.celula-editavel")
+            .forEach(td => configurarEdicaoCelula(td, "pre"));
+    }
+}
+
+function salvarEscalaPre(){
+    if(!podeEditarPre){
+        alert("🔒 Libere a edição primeiro.");
+        return;
+    }
+
+    ESCALA_PRE_REF
+        .set(escalaPreAtual)
+        .then(() => {
+            alert("✅ Escala salva! Atualizada em tempo real para todos.");
+        })
+        .catch(error => {
+            console.error(error);
+            alert("❌ Não foi possível salvar. Verifique as regras do Firebase.");
+        });
+}
+
+function recarregarEscalaPre(){
+    if(!podeEditarPre){
+        alert("🔒 Libere a edição primeiro.");
+        return;
+    }
+
+    if(confirm("Restaurar escala padrão?")){
+        escalaPreAtual =
+            JSON.parse(JSON.stringify(ESCALA_PRE_PADRAO));
+
+        ESCALA_PRE_REF
+            .set(escalaPreAtual)
+            .then(() => {
+                desenharTabelaPre();
+                alert("✅ Restaurada e salva!");
+            })
+            .catch(error => {
+                console.error(error);
+                alert("❌ Erro ao restaurar a escala.");
+            });
+    }
+}
+
+function carregarEscalaPre(snap){
+    const dados = snap.val();
+
+    escalaPreAtual = dados
+        ? dados
+        : JSON.parse(JSON.stringify(ESCALA_PRE_PADRAO));
+
+    desenharTabelaPre();
+}
+
+/* =========================================================
+   EDIÇÃO DE CÉLULAS
+   ========================================================= */
+
+function configurarEdicaoCelula(td, tipo){
+    td.onclick = function(){
+
+        if(this.querySelector("input")) return;
+
+        const valorAtual = this.textContent;
+        const idx = Number(this.dataset.idx);
+        const campo = this.dataset.campo;
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = valorAtual;
+
+        this.innerHTML = "";
+        this.appendChild(input);
+
+        input.focus();
+        input.select();
+
+        let finalizado = false;
+
+        const salvar = () => {
+            if(finalizado) return;
+
+            finalizado = true;
+
+            if(tipo === "fechamento"){
+                escalaFechamentoAtual[idx][campo] = input.value.trim();
+                desenharTabelaFechamento();
+            }else{
+                escalaPreAtual[idx][campo] = input.value.trim();
+                desenharTabelaPre();
+            }
+        };
+
+        input.addEventListener("blur", salvar);
+
+        input.addEventListener("keydown", function(e){
+            if(e.key === "Enter"){
+                e.preventDefault();
+                salvar();
+            }
+
+            if(e.key === "Escape"){
+                finalizado = true;
+
+                if(tipo === "fechamento"){
+                    desenharTabelaFechamento();
+                }else{
+                    desenharTabelaPre();
+                }
+            }
+        });
+    };
+}
+
+/* =========================================================
+   MENU / TEMA
+   ========================================================= */
+
+function toggleMenu(){
+    sidebar.classList.toggle("minimizado");
+    conteudo.classList.toggle("expandido");
+
+    const botao = sidebar.querySelector(".btn-toggle");
+
+    botao.textContent =
+        sidebar.classList.contains("minimizado") ? "▶" : "◀";
+}
+
+function alternarTema(){
+    document.body.classList.toggle("escuro");
+
+    localStorage.setItem(
+        "tema",
+        document.body.classList.contains("escuro")
+            ? "escuro"
+            : "claro"
+    );
+}
+
+if(localStorage.getItem("tema") === "escuro"){
+    document.body.classList.add("escuro");
+}
+
+function mostrarPagina(nome, elemento){
+
+    document.querySelectorAll(".pagina")
+        .forEach(p => p.classList.remove("ativa"));
+
+    const pagina = document.getElementById(`pag-${nome}`);
+
+    if(pagina){
+        pagina.classList.add("ativa");
+    }
+
+    document.querySelectorAll(".menu a")
+        .forEach(a => a.classList.remove("ativo"));
+
+    if(elemento){
+        elemento.classList.add("ativo");
+    }
+
+    if(nome === "breaks"){
+        document.getElementById("dataBreak").value = dataLocalHoje();
+    }
+}
+
+/* =========================================================
+   RELÓGIO
+   ========================================================= */
+
+function atualizarHora(){
+
+    const agora = new Date();
+
+    const txt =
+        agora.toLocaleDateString("pt-BR") +
+        " " +
+        agora.toLocaleTimeString("pt-BR");
+
+    [
+        "hora-fech",
+        "hora-pre",
+        "hora3",
+        "hora4",
+        "hora5",
+        "horaDesperdicio",
+        "horaBreaks"
+    ].forEach(id => {
+
+        const el = document.getElementById(id);
+
+        if(el){
+            el.textContent = txt;
+        }
+    });
+}
+
+setInterval(atualizarHora, 1000);
+atualizarHora();
+
+/* =========================================================
+   DATA
+   ========================================================= */
+
+function dataLocalHoje(){
+    const d = new Date();
+
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function getDataReferencia(){
+
+    const agora = new Date();
+    const hora = agora.getHours();
+
+    const data = new Date(agora);
+
+    if(hora < 3){
+        data.setDate(data.getDate() - 1);
+    }
+
+    return `${data.getFullYear()}-${String(data.getMonth()+1).padStart(2,"0")}-${String(data.getDate()).padStart(2,"0")}`;
+}
+
+async function verificarNovoDia(){
+
+    const dataAtual = getDataReferencia();
+
+    try{
+        const snap = await DATA_REF.once("value");
+        const dataSalva = snap.val();
+
+        if(dataSalva && dataSalva !== dataAtual){
+
+            await DESPERDICIO_REF.remove();
+            await BREAKS_REF.remove();
+            await DATA_REF.set(dataAtual);
+
+        }else if(!dataSalva){
+
+            await DATA_REF.set(dataAtual);
+        }
+
+    }catch(error){
+
+        console.error("Erro ao verificar novo dia:", error);
+
+        atualizarStatusFirebase(false);
+    }
+}
+
+/* =========================================================
+   UTILIDADE: FOLGA
+   ========================================================= */
+
+function calcularFolga(){
+
+    const v = document.getElementById("funcionario").value;
+    const res = document.getElementById("resFolga");
+
+    if(!v){
+        res.style.display = "none";
+        return;
+    }
+
+    res.style.display = "block";
+
+    const hoje = new Date().getDay();
+    const diaFolga = parseInt(v, 10);
+
+    let faltam = (diaFolga - hoje + 7) % 7;
+
+    if(faltam === 0){
+
+        document.getElementById("textoFolga").textContent =
+            `🎉 HOJE É SUA FOLGA! (${diasSemana[diaFolga]})`;
+
+    }else{
+
+        document.getElementById("textoFolga").textContent =
+            `Faltam ${faltam} dias para sua folga (${diasSemana[diaFolga]})!`;
+    }
+}
+
+/* =========================================================
+   VALIDADE
+   ========================================================= */
+
+function usarHoje(){
+    document.getElementById("dataFab").value = dataLocalHoje();
+}
+
+function calcularValidade(){
+
+    const fab = document.getElementById("dataFab").value;
+    const tipo = document.getElementById("tipoValidade").value;
+    const qtd = parseInt(
+        document.getElementById("quantidade").value,
+        10
+    );
+
+    if(!fab || !qtd || qtd < 1){
+        alert("⚠️ Preencha todos os campos corretamente!");
+        return;
+    }
+
+    /*
+       Mantido o comportamento original:
+       soma 1 dia ao resultado final.
+    */
+
+    const partes = fab.split("-").map(Number);
+
+    let dt = new Date(
+        partes[0],
+        partes[1] - 1,
+        partes[2]
+    );
+
+    if(tipo === "dias"){
+
+        dt.setDate(dt.getDate() + qtd + 1);
+
+    }else{
+
+        dt.setMonth(dt.getMonth() + qtd);
+        dt.setDate(dt.getDate() + 1);
+    }
+
+    const resultado =
+        `${String(dt.getDate()).padStart(2,"0")}/` +
+        `${String(dt.getMonth()+1).padStart(2,"0")}/` +
+        `${dt.getFullYear()}`;
+
+    document.getElementById("dtValidade").textContent = resultado;
+    document.getElementById("caixaResultado").style.display = "block";
+}
+
+/* =========================================================
+   DESPERDÍCIO
+   ========================================================= */
+
+function verificarOutro(){
+
+    const sel = document.getElementById("produto").value;
+
+    document.getElementById("campoOutroProduto").style.display =
+        sel === "outros" ? "flex" : "none";
+}
+
+async function adicionarDesperdicio(){
+
+    try{
+        await verificarNovoDia();
+
+        let prod = document.getElementById("produto").value;
+
+        const qtd = parseInt(
+            document.getElementById("qtdDesperdicio").value,
+            10
+        );
+
+        if(prod === "outros"){
+
+            prod = document
+                .getElementById("produtoOutro")
+                .value
+                .trim();
+
+            if(!prod){
+                alert("⚠️ Digite o nome do item!");
+                return;
+            }
+        }
+
+        if(!prod){
+            alert("⚠️ Selecione um produto!");
+            return;
+        }
+
+        if(!qtd || qtd <= 0){
+            alert("⚠️ Informe uma quantidade válida!");
+            return;
+        }
+
+        const agora = new Date();
+
+        const horario =
+            `${String(agora.getHours()).padStart(2,"0")}:` +
+            `${String(agora.getMinutes()).padStart(2,"0")}`;
+
+        await DESPERDICIO_REF.push({
+            data: horario,
+            produto: prod,
+            qtd: qtd
+        });
+
+        document.getElementById("produto").value = "";
+        document.getElementById("produtoOutro").value = "";
+        document.getElementById("campoOutroProduto").style.display = "none";
+        document.getElementById("qtdDesperdicio").value = "";
+
+    }catch(error){
+
+        console.error(error);
+        alert("❌ Não foi possível registrar o desperdício. Verifique o Firebase.");
+    }
+}
+
+function carregarDesperdicios(snapshot){
+
+    const corpo = document.getElementById("corpoDesp");
+
+    corpo.innerHTML = "";
+
+    const dados = snapshot.val();
+
+    let total = 0;
+
+    if(dados){
+
+        Object.keys(dados).forEach(key => {
+
+            const item = dados[key];
+
+            const tr = document.createElement("tr");
+
+            const tdHorario = document.createElement("td");
+            tdHorario.textContent = item.data || "";
+
+            const tdProduto = document.createElement("td");
+            tdProduto.textContent = item.produto || "";
+
+            const tdQtd = document.createElement("td");
+            tdQtd.textContent = item.qtd || 0;
+
+            const tdExcluir = document.createElement("td");
+
+            const btn = document.createElement("button");
+            btn.className = "vermelho";
+            btn.textContent = "✕";
+
+            btn.onclick = () => {
+
+                if(confirm("Excluir este registro?")){
+
+                    DESPERDICIO_REF
+                        .child(key)
+                        .remove()
+                        .catch(error => {
+                            console.error(error);
+                            alert("❌ Não foi possível excluir.");
+                        });
+                }
+            };
+
+            tdExcluir.appendChild(btn);
+
+            tr.appendChild(tdHorario);
+            tr.appendChild(tdProduto);
+            tr.appendChild(tdQtd);
+            tr.appendChild(tdExcluir);
+
+            corpo.appendChild(tr);
+
+            total += parseInt(item.qtd, 10) || 0;
+        });
+    }
+
+    document.getElementById("resumo").innerHTML =
+        `<strong>Total:</strong> ${total} unidades`;
+}
+
+async function limparDesperdicios(){
+
+    if(!confirm(
+        "Tem certeza de que deseja apagar todos os registros de desperdício?"
+    )){
+        return;
+    }
+
+    try{
+
+        await DESPERDICIO_REF.remove();
+
+    }catch(error){
+
+        console.error(error);
+        alert("❌ Não foi possível apagar os registros.");
+    }
+}
+
+/* =========================================================
+   BREAKS
+   ========================================================= */
+
+async function adicionarBreak(turno){
+
+    try{
+
+        await verificarNovoDia();
+
+        const data =
+            document.getElementById("dataBreak").value;
+
+        const gerente =
+            document.getElementById("gerenteTurno").value.trim();
+
+        let nome;
+        let itens;
+
+        if(turno === "manha"){
+
+            nome =
+                document.getElementById("nomeFuncManha").value.trim();
+
+            itens =
+                document.getElementById("itensManha").value.trim();
+
+        }else{
+
+            nome =
+                document.getElementById("nomeFuncNoite").value.trim();
+
+            itens =
+                document.getElementById("itensNoite").value.trim();
+        }
+
+        if(!data || !nome || !itens || !gerente){
+
+            alert("⚠️ Preencha todos os campos!");
+            return;
+        }
+
+        const agora = new Date();
+
+        const horario =
+            `${String(agora.getHours()).padStart(2,"0")}:` +
+            `${String(agora.getMinutes()).padStart(2,"0")}`;
+
+        const turnoNome =
+            turno === "manha"
+                ? "☀️ Manhã"
+                : "🌙 Noite";
+
+        await BREAKS_REF.push({
+            turno: turnoNome,
+            funcionario: nome,
+            itens: itens,
+            gerente: gerente,
+            data: horario
+        });
+
+        if(turno === "manha"){
+
+            document.getElementById("nomeFuncManha").value = "";
+            document.getElementById("itensManha").value = "";
+
+        }else{
+
+            document.getElementById("nomeFuncNoite").value = "";
+            document.getElementById("itensNoite").value = "";
+        }
+
+    }catch(error){
+
+        console.error(error);
+        alert("❌ Não foi possível registrar o break. Verifique o Firebase.");
+    }
+}
+
+function carregarBreaks(snapshot){
+
+    const corpo = document.getElementById("corpoBreaks");
+
+    corpo.innerHTML = "";
+
+    const dados = snapshot.val();
+
+    let total = 0;
+
+    if(dados){
+
+        Object.keys(dados).forEach(key => {
+
+            const item = dados[key];
+
+            const tr = document.createElement("tr");
+
+            const valores = [
+                item.turno || "",
+                item.funcionario || "",
+                item.itens || "",
+                item.gerente || "",
+                item.data || ""
+            ];
+
+            valores.forEach(valor => {
+
+                const td = document.createElement("td");
+                td.textContent = valor;
+                tr.appendChild(td);
+            });
+
+            const tdExcluir = document.createElement("td");
+
+            const btn = document.createElement("button");
+            btn.className = "vermelho";
+            btn.textContent = "✕";
+
+            btn.onclick = () => {
+
+                if(confirm("Excluir este registro?")){
+
+                    BREAKS_REF
+                        .child(key)
+                        .remove()
+                        .catch(error => {
+                            console.error(error);
+                            alert("❌ Não foi possível excluir.");
+                        });
+                }
+            };
+
+            tdExcluir.appendChild(btn);
+            tr.appendChild(tdExcluir);
+
+            corpo.appendChild(tr);
+
+            total++;
+        });
+    }
+
+    document.getElementById("resumoBreaks").innerHTML =
+        `<strong>Total:</strong> ${total} registros`;
+}
+
+async function limparBreaks(){
+
+    if(!confirm(
+        "Tem certeza de que deseja apagar todos os registros de Breaks?"
+    )){
+        return;
+    }
+
+    try{
+
+        await BREAKS_REF.remove();
+
+    }catch(error){
+
+        console.error(error);
+        alert("❌ Não foi possível apagar os registros.");
+    }
+}
+
+/* =========================================================
+   SEGURANÇA / HTML
+   ========================================================= */
+
+function escapeHTML(valor){
+
+    return String(valor ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/* =========================================================
+   STATUS DO FIREBASE
+   ========================================================= */
+
+function atualizarStatusFirebase(conectado){
+
+    const status = document.getElementById("statusSinc");
+
+    if(conectado){
+
+        status.className = "status-sinc conectado";
+        status.textContent = "✅ Sincronizado em tempo real";
+
+    }else{
+
+        status.className = "status-sinc desconectado";
+        status.textContent = "⚠️ Verifique a conexão";
+    }
+}
+
+const conexaoRef = db.ref(".info/connected");
+
+conexaoRef.on("value", snap => {
+    atualizarStatusFirebase(snap.val() === true);
+});
+
+/* =========================================================
+   FIREBASE EM TEMPO REAL
+   ========================================================= */
+
+DESPERDICIO_REF.on(
+    "value",
+    carregarDesperdicios,
+    error => {
+        console.error("Firebase desperdício:", error);
+        atualizarStatusFirebase(false);
+    }
+);
+
+BREAKS_REF.on(
+    "value",
+    carregarBreaks,
+    error => {
+        console.error("Firebase breaks:", error);
+        atualizarStatusFirebase(false);
+    }
+);
+
+ESCALA_FECHAMENTO_REF.on(
+    "value",
+    carregarEscalaFechamento,
+    error => {
+        console.error("Firebase fechamento:", error);
+        atualizarStatusFirebase(false);
+    }
+);
+
+ESCALA_PRE_REF.on(
+    "value",
+    carregarEscalaPre,
+    error => {
+        console.error("Firebase pré-fechamento:", error);
+        atualizarStatusFirebase(false);
+    }
+);
+
+/* =========================================================
+   INICIALIZAÇÃO
+   ========================================================= */
+
+document.getElementById("dataBreak").value = dataLocalHoje();
+
+verificarNovoDia().catch(error => {
+    console.error("Erro na inicialização:", error);
+});
+
+</script>
+
+</body>
+</html>
