@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Escala BK</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23FFEED8' width='200' height='200' rx='30'/%3E%3Cellipse cx='100' cy='55' rx='75' ry='35' fill='%23FF7B00'/%3E%3Cellipse cx='100' cy='145' rx='75' ry='35' fill='%23FF7B00'/%3E%3Ctext x='100' y='115' font-size='70' font-weight='bold' text-anchor='middle' fill='%23D62300' font-family='Arial'%3EBK%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        :root{
+            --bk-laranja:#FF7B00;
+            --bk-vermelho:#D62300;
+            --bk-vermelho-escuro:#B61C00;
+            --bk-escuro:#1F1F1F;
+            --fundo-pagina:linear-gradient(135deg,#ff7b00,#d62300);
+            --fundo-card:#fff;
+            --fundo-form:#FFF4E8;
+            --texto-padrao:#333;
+            --borda-suave:#FFC8B0;
+        }
+        body.escuro{
+            --fundo-pagina:linear-gradient(135deg,#1a1a2e,#16213e);
+            --fundo-card:#1f2937;
+            --fundo-form:#374151;
+            --texto-padrao:#e5e7eb;
+            --borda-suave:#4b5563;
+        }
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Poppins',sans-serif;
+        }
+        html,body{
+            width:100%;
+            min-height:100vh;
+            overflow-x:hidden;
+        }
+        body{
+            background:var(--fundo-pagina);
+            color:var(--texto-padrao);
+            transition:background .4s ease,color .4s ease;
+        }
+        ::-webkit-scrollbar{
+            width:8px;
+            height:8px;
+        }
+        ::-webkit-scrollbar-track{
+            background:rgba(255,255,255,.1);
+            border-radius:4px;
+        }
+        ::-webkit-scrollbar-thumb{
+            background:var(--bk-vermelho);
+            border-radius:4px;
+        }
+        aside{
+            width:220px;
+            background:linear-gradient(180deg,#1F1F1F,#2A2A2A);
+            color:white;
+            padding:20px 15px;
+            position:fixed;
+            top:0;
+            left:0;
+            height:100vh;
+            overflow-y:auto;
+            transition:width .35s ease;
+            z-index:100;
+            box-shadow:4px 0 20px rgba(0,0,0,.3);
+        }
+        aside.minimizado{
+            width:70px;
+            padding:15px 8px;
+        }
+        aside.minimizado .logo h1 span,
+        aside.minimizado .logo p,
+        aside.minimizado .menu a span{
+            display:none;
+        }
+        aside.minimizado .logo h1{
+            font-size:24px;
+        }
+        aside.minimizado .menu a{
+            text-align:center;
+            padding:14px 0;
+            font-size:20px;
+            justify-content:center;
+        }
+        .btn-toggle{
+            width:100%;
+            padding:10px;
+            margin-bottom:10px;
+            border:none;
+            border-radius:12px;
+            background:linear-gradient(90deg,#FF7B00,#FF8C00);
+            color:#000;
+            cursor:pointer;
+            font-weight:700;
+            font-size:20px;
+            transition:all .3s ease;
+            box-shadow:0 4px 12px rgba(255,123,0,.4);
+        }
+        .btn-toggle:hover{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            color:white;
+            transform:scale(1.03);
+        }
+        .btn-tema{
+            background:#374151;
+            color:white;
+            font-size:14px;
+            padding:8px;
+            margin-bottom:20px;
+        }
+        .logo{
+            text-align:center;
+            margin-bottom:24px;
+            padding-bottom:16px;
+            border-bottom:1px solid rgba(255,123,0,.3);
+        }
+        .logo h1{
+            font-size:20px;
+            font-weight:700;
+            background:linear-gradient(90deg,#fff,#FFD700);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
+        .logo p{
+            font-size:12px;
+            opacity:.8;
+            margin-top:6px;
+            color:#FF7B00;
+            font-weight:500;
+        }
+        .status-sinc{
+            font-size:12px;
+            padding:6px 10px;
+            border-radius:8px;
+            margin-top:10px;
+            text-align:center;
+        }
+        .status-sinc.conectado{
+            background:#d1fae5;
+            color:#065f46;
+        }
+        .status-sinc.desconectado{
+            background:#fee2e2;
+            color:#991b1b;
+        }
+        .menu a{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            color:white;
+            text-decoration:none;
+            padding:14px 12px;
+            margin-bottom:8px;
+            border-radius:12px;
+            transition:all .3s ease;
+            font-weight:600;
+            cursor:pointer;
+            font-size:14px;
+            border:1px solid transparent;
+        }
+        .menu a:hover{
+            background:linear-gradient(90deg,rgba(255,123,0,.2),rgba(214,35,0,.2));
+            border-color:#FF7B00;
+            transform:translateX(6px);
+        }
+        .menu a.ativo{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            box-shadow:0 4px 12px rgba(214,35,0,.4);
+        }
+        main{
+            width:calc(100% - 220px);
+            min-height:100vh;
+            padding:30px 35px;
+            margin-left:220px;
+            transition:all .35s ease;
+        }
+        main.expandido{
+            width:calc(100% - 70px);
+            margin-left:70px;
+        }
+        .pagina{
+            display:none;
+            animation:aparecer .4s ease-out;
+        }
+        .pagina.ativa{
+            display:block;
+        }
+        @keyframes aparecer{
+            from{
+                opacity:0;
+                transform:translateY(15px);
+            }
+            to{
+                opacity:1;
+                transform:translateY(0);
+            }
+        }
+        header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:20px;
+            flex-wrap:wrap;
+            gap:15px;
+        }
+        header h2{
+            color:white;
+            font-size:26px;
+            font-weight:700;
+            text-shadow:0 2px 8px rgba(0,0,0,.2);
+        }
+        header p{
+            color:rgba(255,255,255,.9);
+            font-weight:500;
+            margin-top:4px;
+        }
+        .relogio{
+            background:white;
+            padding:12px 20px;
+            border-radius:14px;
+            font-weight:700;
+            color:#D62300;
+            box-shadow:0 8px 24px rgba(214,35,0,.25);
+            font-size:14px;
+            border:3px solid #FF7B00;
+        }
+
+        /* ===== AVISO IMPORTANTE - VERSÃO 2 ===== */
+        .aviso-importante{
+            background:linear-gradient(135deg,#fff7f2 0%,#fff 55%,#ffe9df 100%);
+            border:3px solid #D62300;
+            border-left:9px solid #D62300;
+            border-radius:22px;
+            padding:28px 32px;
+            margin-bottom:30px;
+            box-shadow:0 12px 32px rgba(214,35,0,.20);
+            position:relative;
+            overflow:hidden;
+            transition:all .3s ease;
+        }
+        .aviso-importante::after{
+            content:'⚠️';
+            position:absolute;
+            right:45px;
+            bottom:-25px;
+            font-size:150px;
+            opacity:.07;
+            pointer-events:none;
+        }
+        body.escuro .aviso-importante{
+            background:linear-gradient(135deg,#321b18 0%,#241b1b 55%,#3b211d 100%);
+            border-color:#ff5a4f;
+        }
+        .aviso-importante:hover{
+            transform:translateY(-3px);
+            box-shadow:0 16px 38px rgba(214,35,0,.28);
+        }
+        .aviso-conteudo{
+            display:flex;
+            align-items:center;
+            gap:24px;
+            flex-wrap:wrap;
+            position:relative;
+            z-index:1;
+        }
+        .aviso-icone{
+            width:88px;
+            height:88px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:50%;
+            background:linear-gradient(135deg,#D62300,#ff4b2b);
+            color:white;
+            font-size:44px;
+            line-height:1;
+            flex-shrink:0;
+            box-shadow:0 8px 20px rgba(214,35,0,.30);
+        }
+        .aviso-texto{
+            flex:1;
+            min-width:280px;
+            padding-right:110px;
+        }
+        .aviso-titulo{
+            font-size:30px;
+            font-weight:800;
+            color:#D62300;
+            margin-bottom:10px;
+            letter-spacing:.3px;
+        }
+        body.escuro .aviso-titulo{
+            color:#ff746b;
+        }
+        .aviso-mensagem{
+            font-size:18px;
+            color:#222;
+            line-height:1.7;
+            font-weight:600;
+        }
+        body.escuro .aviso-mensagem{
+            color:#f3f4f6;
+        }
+        .aviso-meta{
+            display:flex;
+            gap:10px;
+            margin-top:16px;
+            flex-wrap:wrap;
+        }
+        .aviso-tag{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:8px 14px;
+            border-radius:22px;
+            font-size:13px;
+            font-weight:700;
+        }
+        .aviso-data{
+            background:#ffe4e4;
+            color:#991b1b;
+        }
+        body.escuro .aviso-data{
+            background:#4a2727;
+            color:#ffc2bd;
+        }
+        .aviso-prioridade{
+            background:#D62300;
+            color:white;
+            box-shadow:0 4px 12px rgba(214,35,0,.20);
+        }
+        .aviso-editar{
+            position:absolute;
+            top:22px;
+            right:24px;
+            z-index:2;
+            background:white;
+            border:2px solid #D62300;
+            color:#D62300;
+            padding:9px 15px;
+            font-size:13px;
+            border-radius:10px;
+            cursor:pointer;
+            transition:all .25s ease;
+            font-weight:700;
+        }
+        .aviso-editar:hover{
+            background:#D62300;
+            color:white;
+            transform:translateY(-1px);
+        }
+        body.escuro .aviso-editar{
+            background:#2c1a1a;
+            color:#ff746b;
+            border-color:#ff746b;
+        }
+        .aviso-form-container{
+            margin-top:22px;
+            padding-top:20px;
+            border-top:2px dashed #ffcccc;
+            display:none;
+            position:relative;
+            z-index:2;
+        }
+        body.escuro .aviso-form-container{
+            border-top-color:#6b3b3b;
+        }
+        .aviso-form-container.visivel{
+            display:block;
+        }
+        .aviso-form-container textarea{
+            width:100%;
+            min-height:120px;
+            padding:14px;
+            border:2px solid #ffcccc;
+            border-radius:12px;
+            font-size:15px;
+            resize:vertical;
+            margin-bottom:10px;
+            background:rgba(255,255,255,.7);
+            color:var(--texto-padrao);
+        }
+        .aviso-form-container textarea:focus{
+            outline:none;
+            border-color:#D62300;
+            box-shadow:0 0 0 4px rgba(214,35,0,.10);
+        }
+        .aviso-sem-mensagem{
+            opacity:0.7;
+            font-style:italic;
+        }
+
+        /* ===== CONTROLE DE DESPERDÍCIO ===== */
+        .desperdicio-info{
+            background:linear-gradient(135deg,#fff7ed,#fff);
+            border:1px solid #ffd7bd;
+            border-radius:12px;
+            padding:12px 15px;
+            margin-bottom:16px;
+            color:#9a3412;
+            font-size:13px;
+            font-weight:600;
+        }
+        body.escuro .desperdicio-info{
+            background:#33251e;
+            border-color:#6b4632;
+            color:#fdba74;
+        }
+        .controle-qtd{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:7px;
+        }
+        .btn-qtd{
+            width:34px;
+            height:34px;
+            padding:0;
+            margin:0;
+            border-radius:9px;
+            font-size:20px;
+            line-height:1;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 3px 8px rgba(0,0,0,.12);
+        }
+        .btn-qtd.menos{
+            background:linear-gradient(90deg,#ef4444,#dc2626);
+        }
+        .btn-qtd.mais{
+            background:linear-gradient(90deg,#10b981,#059669);
+        }
+        .qtd-valor{
+            min-width:42px;
+            font-size:17px;
+            font-weight:800;
+            color:#D62300;
+        }
+        body.escuro .qtd-valor{
+            color:#ff8a80;
+        }
+        .produto-registro{
+            font-weight:700;
+            text-align:left !important;
+        }
+        /* ===== FIM AVISO/CONTROLE ===== */
+
+        .tabela,
+        .caixa-form{
+            background:var(--fundo-card);
+            border-radius:16px;
+            padding:28px;
+            box-shadow:0 8px 24px rgba(214,35,0,.25);
+            margin-bottom:28px;
+            overflow:auto;
+            border-top:5px solid transparent;
+            border-image:linear-gradient(90deg,#FF7B00,#D62300) 1;
+            color:var(--texto-padrao);
+        }
+        .tabela h2,
+        .caixa-form h2{
+            color:#D62300;
+            margin-bottom:20px;
+            font-size:20px;
+            font-weight:700;
+        }
+        table{
+            width:100%;
+            border-collapse:separate;
+            border-spacing:0;
+            border-radius:12px;
+            overflow:hidden;
+        }
+        th{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            color:white;
+            padding:14px 10px;
+            font-weight:700;
+            font-size:14px;
+            text-transform:uppercase;
+            letter-spacing:.5px;
+        }
+        td{
+            padding:12px 10px;
+            text-align:center;
+            border-bottom:1px solid #FFE4D6;
+            font-size:14px;
+            transition:background .25s ease;
+        }
+        body.escuro td{
+            border-bottom:1px solid #374151;
+        }
+        tr:nth-child(even) td{
+            background:#FFF8F2;
+        }
+        body.escuro tr:nth-child(even) td{
+            background:#374151;
+        }
+        tr:hover td{
+            background:#FFE4D6;
+        }
+        body.escuro tr:hover td{
+            background:#4b5563;
+        }
+        button{
+            background:linear-gradient(90deg,#D62300,#B61C00);
+            color:white;
+            border:none;
+            padding:10px 18px;
+            border-radius:10px;
+            font-size:14px;
+            cursor:pointer;
+            transition:all .3s ease;
+            font-weight:600;
+            margin-right:8px;
+            margin-top:8px;
+            box-shadow:0 4px 12px rgba(214,35,0,.3);
+        }
+        button:hover{
+            transform:translateY(-2px);
+            box-shadow:0 6px 16px rgba(214,35,0,.4);
+        }
+        button:active{
+            transform:translateY(0);
+        }
+        button.sucesso{
+            background:linear-gradient(90deg,#10b981,#059669);
+        }
+        button.azul{
+            background:linear-gradient(90deg,#3b82f6,#2563eb);
+        }
+        button.vermelho{
+            background:linear-gradient(90deg,#ef4444,#dc2626);
+            padding:5px 8px;
+            font-size:12px;
+            margin:0;
+        }
+        button:disabled{
+            opacity:.5;
+            cursor:not-allowed;
+            transform:none;
+        }
+        .linha-form{
+            display:flex;
+            gap:12px;
+            flex-wrap:wrap;
+            margin-bottom:15px;
+            align-items:center;
+        }
+        .linha-form label{
+            font-weight:600;
+            color:#B61C00;
+            min-width:100px;
+        }
+        .linha-form input,
+        .linha-form select,
+        .linha-form textarea{
+            padding:10px 14px;
+            border:2px solid var(--borda-suave);
+            border-radius:10px;
+            font-size:15px;
+            flex:1;
+            min-width:180px;
+            transition:all .3s ease;
+            background:transparent;
+            color:var(--texto-padrao);
+        }
+        .linha-form textarea{
+            min-height:90px;
+            resize:vertical;
+        }
+        .linha-form input:focus,
+        .linha-form select:focus,
+        .linha-form textarea:focus{
+            outline:none;
+            border-color:#FF7B00;
+            box-shadow:0 0 0 4px rgba(255,123,0,.15);
+        }
+        .aviso-diario{
+            background:#fff3cd;
+            border-left:5px solid #ffc107;
+            padding:12px 16px;
+            border-radius:10px;
+            margin-bottom:18px;
+            color:#856404;
+            font-weight:500;
+        }
+        .aviso-sinc{
+            background:#dbeafe;
+            border-left:5px solid #3b82f6;
+            padding:10px 14px;
+            border-radius:8px;
+            margin:12px 0;
+            color:#1e40af;
+            font-size:13px;
+        }
+        .grupo-turno{
+            background:var(--fundo-form);
+            border-radius:12px;
+            padding:20px;
+            margin-bottom:20px;
+        }
+        .grupo-turno h3{
+            color:#D62300;
+            margin-bottom:15px;
+            font-size:17px;
+        }
+        .tag-turno-manha,
+        .tag-turno-noite{
+            display:inline-block;
+            padding:3px 10px;
+            border-radius:20px;
+            font-weight:600;
+            font-size:13px;
+        }
+        .tag-turno-manha{
+            background:#fbbf24;
+            color:#78350f;
+        }
+        .tag-turno-noite{
+            background:#3b82f6;
+            color:white;
+        }
+        .celula-editavel{
+            cursor:default;
+            transition:background .2s;
+        }
+        .celula-editavel.pode-editar{
+            cursor:pointer;
+        }
+        .celula-editavel.pode-editar:hover{
+            background:rgba(255,123,0,.15);
+        }
+        .celula-editavel input{
+            width:100%;
+            height:100%;
+            border:none;
+            text-align:center;
+            font-size:14px;
+            background:transparent;
+            color:var(--texto-padrao);
+            padding:0;
+            outline:none;
+        }
+        .senha-container{
+            margin:15px 0;
+            padding:15px;
+            background:#FFF4E8;
+            border-radius:12px;
+        }
+        body.escuro .senha-container{
+            background:#374151;
+        }
+        .status-edicao{
+            display:inline-block;
+            margin-left:10px;
+            padding:4px 10px;
+            border-radius:20px;
+            font-size:13px;
+            font-weight:600;
+        }
+        .status-edicao.liberado{
+            background:#d1fae5;
+            color:#065f46;
+        }
+        .status-edicao.bloqueado{
+            background:#fee2e2;
+            color:#991b1b;
+        }
+        #campoOutroProduto{
+            display:none;
+        }
+        #caixaResultado{
+            margin-top:20px;
+            padding:20px;
+            background:#FFF4E8;
+            border-radius:12px;
+            display:none;
+        }
+        .btn-adicionar-coluna{
+            margin:10px 0;
+        }
+        .btn-remover-coluna{
+            background:linear-gradient(90deg,#ef4444,#dc2626);
+            padding:4px 8px;
+            font-size:11px;
+        }
+        @media(max-width:768px){
+            aside{
+                position:relative;
+                width:100%;
+                height:auto;
+            }
+            aside.minimizado{
+                width:100%;
+            }
+            main,
+            main.expandido{
+                width:100%;
+                margin-left:0;
+                padding:20px;
+            }
+            table{
+                font-size:13px;
+                min-width:650px;
+            }
+            th,
+            td{
+                padding:8px 4px;
+            }
+            .linha-form{
+                flex-direction:column;
+                align-items:stretch;
+            }
+            .status-edicao{
+                margin-left:0;
+                margin-top:8px;
+            }
+            .aviso-conteudo{
+                flex-direction:column;
+                align-items:stretch;
+            }
+            .aviso-icone{
+                width:70px;
+                height:70px;
+                font-size:34px;
+            }
+            .aviso-texto{
+                padding-right:0;
+            }
+            .aviso-titulo{
+                font-size:24px;
+            }
+            .aviso-mensagem{
+                font-size:16px;
+            }
+            .aviso-editar{
+                position:static;
+                margin-top:10px;
+                width:100%;
+            }
+        }
+        @media print{
+            aside,
+            button,
+            .senha-container,
+            header .relogio,
+            .btn-adicionar-coluna,
+            .btn-remover-coluna,
+            .aviso-editar{
+                display:none !important;
+            }
+            main{
+                width:100%;
+                margin:0;
+                padding:10px;
+            }
+            body{
+                background:white;
+            }
+            header h2,
+            header p{
+                color:#000;
+                text-shadow:none;
+            }
+            .tabela{
+                box-shadow:none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside id="sidebar">
+        <button class="btn-toggle" onclick="toggleMenu()">◀</button>
+        <button class="btn-toggle btn-tema" onclick="alternarTema()">🌙 Tema</button>
+        <div class="logo">
+            <h1>🍔 <span>BK Escala</span></h1>
+            <p>Sistema de Escala Oficial</p>
+        </div>
+        <div class="status-sinc conectado" id="statusSinc">
+            ✅ Sincronizado em tempo real
+        </div>
+        <nav class="menu">
+            <a class="ativo" onclick="mostrarPagina('fechamento', this)">📋 <span>Escala de Fechamento</span></a>
+            <a onclick="mostrarPagina('pre-fechamento', this)">🔧 <span>Escala de Pré-Fechamento</span></a>
+            <a onclick="mostrarPagina('validade', this)">📅 <span>Validade</span></a>
+            <a onclick="mostrarPagina('desperdicio', this)">📉 <span>Desperdício</span></a>
+            <a onclick="mostrarPagina('breaks', this)">🍔 <span>Controle de Breaks</span></a>
+            <a onclick="mostrarPagina('utilidades', this)">🛠️ <span>Utilidades</span></a>
+            <a onclick="mostrarPagina('qrcode', this)">📱 <span>Acesso Rápido</span></a>
+        </nav>
+    </aside>
+    <main id="conteudo">
+        <!-- ================= ESCALA DE FECHAMENTO ================= -->
+        <div id="pag-fechamento" class="pagina ativa">
+            <header>
+                <div>
+                    <h2>📋 Escala de Fechamento</h2>
+                    <p>Sistema de Escala BK • Semana de fechamento</p>
+                </div>
+                <div class="relogio" id="hora-fech"></div>
+            </header>
+
+            <!-- ===== AVISO IMPORTANTE ===== -->
+            <div class="aviso-importante" id="avisoPrincipal">
+                <button class="aviso-editar" onclick="alternarFormAviso()">✏️ EDITAR</button>
+                <div class="aviso-conteudo">
+                    <div class="aviso-icone">🔔</div>
+                    <div class="aviso-texto">
+                        <h3 class="aviso-titulo">AVISO IMPORTANTE</h3>
+                        <p class="aviso-mensagem" id="textoAviso">
+                            Hoje o fechamento será realizado às 02:30.<br>
+                            Todos devem conferir suas funções antes de iniciar o turno.
+                        </p>
+                        <div class="aviso-meta">
+                            <span class="aviso-tag aviso-data">📅 26/05/2025</span>
+                            <span class="aviso-tag aviso-prioridade">⚠️ PRIORIDADE ALTA</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="aviso-form-container" id="formAvisoContainer">
+                    <textarea id="novoTextoAviso" placeholder="Digite aqui o aviso que todos verão...">Hoje o fechamento será realizado às 02:30.&#10;Todos devem conferir suas funções antes de iniciar o turno.</textarea>
+                    <button class="sucesso" onclick="salvarAviso()">💾 Salvar Aviso</button>
+                    <button onclick="limparAviso()">🗑️ Limpar Aviso</button>
+                </div>
+            </div>
+            <!-- ===== FIM AVISO IMPORTANTE ===== -->
+
+            <div class="tabela">
+                <h2>Escala de Fechamento</h2>
+                <div class="senha-container">
+                    <div class="linha-form">
+                        <label>🔐 Senha para editar:</label>
+                        <input type="password" id="senhaFech" placeholder="Digite a senha para liberar edição">
+                        <button class="azul" onclick="liberarEdicaoFech()">🔓 Liberar Edição</button>
+                        <span class="status-edicao bloqueado" id="statusEditFechado">🔒 Bloqueado</span>
+                    </div>
+                    <div id="botoesSalvarFech" style="display:none;margin-top:10px;">
+                        <button class="sucesso" onclick="salvarEscalaFechamento()">💾 Salvar Escala</button>
+                        <button onclick="recarregarEscalaFech()">🔄 Restaurar Original</button>
+                        <button class="azul btn-adicionar-coluna" onclick="adicionarFuncionarioFech()">➕ Adicionar Funcionário</button>
+                        <span style="color:#666;font-size:13px;margin-left:10px;">
+                            ✅ Salvo em todos os dispositivos
+                        </span>
+                    </div>
+                </div>
+                <table id="tabelaFechamento">
+                    <thead id="cabecalhoFechamento">
+                        <tr>
+                            <th>Dia</th>
+                            <th>Folga</th>
+                            <th>Daniel</th>
+                            <th>Mariana</th>
+                            <th>Julyan</th>
+                            <th>Thuanney</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoFechamento"></tbody>
+                </table>
+                <p style="margin-top:12px;font-size:13px;color:#666;">
+                    📌 Todos veem a escala. Digite a senha acima para poder editar nomes, funções e adicionar funcionários.
+                </p>
+                <button onclick="window.print()">🖨 Imprimir</button>
+            </div>
+        </div>
+
+        <!-- ================= PRÉ-FECHAMENTO ================= -->
+        <div id="pag-pre-fechamento" class="pagina">
+            <header>
+                <div>
+                    <h2>🔧 Escala de Pré-Fechamento</h2>
+                    <p>Tema Burger King • Semana de fechamento</p>
+                </div>
+                <div class="relogio" id="hora-pre"></div>
+            </header>
+
+            <!-- ===== AVISO IMPORTANTE TAMBÉM AQUI ===== -->
+            <div class="aviso-importante" id="avisoPrincipalPre">
+                <button class="aviso-editar" onclick="alternarFormAvisoPre()">✏️ EDITAR</button>
+                <div class="aviso-conteudo">
+                    <div class="aviso-icone">🔔</div>
+                    <div class="aviso-texto">
+                        <h3 class="aviso-titulo">AVISO IMPORTANTE</h3>
+                        <p class="aviso-mensagem" id="textoAvisoPre">
+                            Confira os materiais e equipamentos antes de iniciar os procedimentos de pré-fechamento.
+                        </p>
+                        <div class="aviso-meta">
+                            <span class="aviso-tag aviso-data">📅 Atualizado hoje</span>
+                            <span class="aviso-tag aviso-prioridade">⚠️ ATENÇÃO</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="aviso-form-container" id="formAvisoContainerPre">
+                    <textarea id="novoTextoAvisoPre" placeholder="Digite o aviso..."></textarea>
+                    <button class="sucesso" onclick="salvarAvisoPre()">💾 Salvar Aviso</button>
+                </div>
+            </div>
+
+            <div class="tabela">
+                <h2>Escala de Pré-Fechamento</h2>
+                <div class="senha-container">
+                    <div class="linha-form">
+                        <label>🔐 Senha para editar:</label>
+                        <input type="password" id="senhaPre" placeholder="Digite a senha para liberar edição">
+                        <button class="azul" onclick="liberarEdicaoPre()">🔓 Liberar Edição</button>
+                        <span class="status-edicao bloqueado" id="statusEditPre">🔒 Bloqueado</span>
+                    </div>
+                    <div id="botoesSalvarPre" style="display:none;margin-top:10px;">
+                        <button class="sucesso" onclick="salvarEscalaPre()">💾 Salvar Escala</button>
+                        <button onclick="recarregarEscalaPre()">🔄 Restaurar Original</button>
+                        <button class="azul btn-adicionar-coluna" onclick="adicionarFuncionarioPre()">➕ Adicionar Funcionário</button>
+                        <span style="color:#666;font-size:13px;margin-left:10px;">
+                            ✅ Salvo em todos os dispositivos
+                        </span>
+                    </div>
+                </div>
+                <table id="tabelaPre">
+                    <thead id="cabecalhoPre">
+                        <tr>
+                            <th>Dia</th>
+                            <th>Gabriel</th>
+                            <th>Amanda</th>
+                            <th>Dandara</th>
+                            <th>Luísa</th>
+                            <th>Júlia</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoPre"></tbody>
+                </table>
+                <p style="margin-top:12px;font-size:13px;color:#666;">
+                    📌 Todos veem a escala. Digite a senha acima para poder editar nomes, funções e adicionar funcionários.
+                </p>
+                <button onclick="window.print()">🖨 Imprimir</button>
+            </div>
+        </div>
+
+        <!-- ================= VALIDADE ================= -->
+        <div id="pag-validade" class="pagina">
+            <header>
+                <div>
+                    <h2>📅 Controle de Validade</h2>
+                    <p>Validades padrão e calculadora</p>
+                </div>
+                <div class="relogio" id="hora3"></div>
+            </header>
+            <div class="tabela">
+                <h2>📋 Validades Padrão</h2>
+                <table>
+                    <tr><th>Produto</th><th>Validade</th></tr>
+                    <tr><td>Maionese</td><td>7 dias</td></tr>
+                    <tr><td>Molho Stacker</td><td>3 dias</td></tr>
+                    <tr><td>Barbecue</td><td>7 dias</td></tr>
+                    <tr><td>Cheddar</td><td>5 dias</td></tr>
+                    <tr><td>Picles</td><td>7 dias</td></tr>
+                    <tr><td>Pimenta</td><td>7 dias</td></tr>
+                    <tr><td>Queijo</td><td>4 dias</td></tr>
+                </table>
+            </div>
+            <div class="caixa-form">
+                <h2>🔍 Calcular Validade</h2>
+                <div class="linha-form">
+                    <label>Data Fabricação:</label>
+                    <input type="date" id="dataFab">
+                </div>
+                <div class="linha-form">
+                    <label>Validade:</label>
+                    <select id="tipoValidade">
+                        <option value="dias">Dias</option>
+                        <option value="meses">Meses</option>
+                    </select>
+                </div>
+                <div class="linha-form">
+                    <label>Quantidade:</label>
+                    <input type="number" id="quantidade" placeholder="Ex: 7" min="1">
+                </div>
+                <button onclick="calcularValidade()">🧮 Calcular</button>
+                <button onclick="usarHoje()">📍 Hoje</button>
+                <div id="caixaResultado">
+                    <h3>✅ Válido até: <span id="dtValidade"></span></h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= DESPERDÍCIO ================= -->
+        <div id="pag-desperdicio" class="pagina">
+            <header>
+                <div>
+                    <h2>📉 Controle de Desperdício</h2>
+                    <p>Até 03:00 do dia seguinte</p>
+                </div>
+                <div class="relogio" id="horaDesperdicio"></div>
+            </header>
+            <div class="aviso-diario">
+                ⚠️ Registros válidos até às <strong>03:00 do dia seguinte</strong>.
+            </div>
+            <div class="aviso-sinc">
+                ✅ Sincronização em tempo real ativa! Itens iguais são agrupados automaticamente.
+            </div>
+            <div class="caixa-form">
+                <h2>➕ Adicionar Desperdício</h2>
+                <div class="desperdicio-info">
+                    💡 Se o produto já estiver na lista, a nova quantidade será somada ao item existente.
+                    Use <strong>+</strong> e <strong>−</strong> na lista para ajustar a quantidade rapidamente.
+                </div>
+                <div class="linha-form">
+                    <label>Produto:</label>
+                    <select id="produto" onchange="verificarOutro()">
+                        <option value="">Selecione...</option>
+                        <option value="Pão de Hambúrguer">Pão de Hambúrguer</option>
+                        <option value="Pão de Whopper">Pão de Whopper</option>
+                        <option value="Carne de Hambúrguer">Carne de Hambúrguer</option>
+                        <option value="Carne de Whopper">Carne de Whopper</option>
+                        <option value="Chicken">Chicken</option>
+                        <option value="Crispy">Crispy</option>
+                        <option value="Pão Supremo">Pão Supremo</option>
+                        <option value="Pão de Brioche">Pão de Brioche</option>
+                        <option value="outros">Outros ▾</option>
+                    </select>
+                </div>
+                <div class="linha-form" id="campoOutroProduto">
+                    <label>Digite o item:</label>
+                    <input type="text" id="produtoOutro" placeholder="Ex: Bacon, molho, sobremesa...">
+                </div>
+                <div class="linha-form">
+                    <label>Quantidade:</label>
+                    <input type="number" id="qtdDesperdicio" placeholder="Ex: 5" min="1">
+                </div>
+                <button class="sucesso" onclick="adicionarDesperdicio()">✅ Adicionar</button>
+                <button class="vermelho" onclick="limparDesperdicios()">🗑️ Zerar</button>
+            </div>
+            <div class="tabela">
+                <h2>📋 Registros</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Última atualização</th>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Controle</th>
+                            <th>Excluir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoDesp"></tbody>
+                </table>
+                <p id="resumo" style="margin-top:15px;">
+                    <strong>Total:</strong> 0 unidades
+                </p>
+            </div>
+        </div>
+
+        <!-- ================= BREAKS ================= -->
+        <div id="pag-breaks" class="pagina">
+            <header>
+                <div>
+                    <h2>🍔 Controle de Breaks</h2>
+                    <p>Refeições dos funcionários</p>
+                </div>
+                <div class="relogio" id="horaBreaks"></div>
+            </header>
+            <div class="aviso-diario">
+                ⚠️ Registros expiram às <strong>03:00 do dia seguinte</strong>.
+            </div>
+            <div class="aviso-sinc">
+                ✅ Digite livremente os itens consumidos
+            </div>
+            <div class="caixa-form">
+                <h2>📋 Dados do Dia</h2>
+                <div class="linha-form">
+                    <label>Data:</label>
+                    <input type="date" id="dataBreak">
+                </div>
+                <div class="linha-form">
+                    <label>Gerente de Turno:</label>
+                    <input type="text" id="gerenteTurno" placeholder="Nome do gerente">
+                </div>
+            </div>
+            <div class="grupo-turno">
+                <h3>☀️ Turno da Manhã <span class="tag-turno-manha">MANHÃ</span></h3>
+                <div class="linha-form">
+                    <label>Funcionário:</label>
+                    <input type="text" id="nomeFuncManha" placeholder="Nome">
+                </div>
+                <div class="linha-form" style="align-items:flex-start;">
+                    <label>Itens consumidos:</label>
+                    <textarea id="itensManha" placeholder="Digite tudo que consumiu"></textarea>
+                </div>
+                <button class="sucesso" onclick="adicionarBreak('manha')">
+                    ✅ Registrar Break Manhã
+                </button>
+            </div>
+            <div class="grupo-turno">
+                <h3>🌙 Turno da Noite <span class="tag-turno-noite">NOITE</span></h3>
+                <div class="linha-form">
+                    <label>Funcionário:</label>
+                    <input type="text" id="nomeFuncNoite" placeholder="Nome">
+                </div>
+                <div class="linha-form" style="align-items:flex-start;">
+                    <label>Itens consumidos:</label>
+                    <textarea id="itensNoite" placeholder="Digite tudo que consumiu"></textarea>
+                </div>
+                <button class="sucesso" onclick="adicionarBreak('noite')">
+                    ✅ Registrar Break Noite
+                </button>
+            </div>
+            <div class="tabela">
+                <h2>📋 Registros de Breaks</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Turno</th>
+                            <th>Funcionário</th>
+                            <th>Itens Consumidos</th>
+                            <th>Gerente</th>
+                            <th>Horário</th>
+                            <th>Excluir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoBreaks"></tbody>
+                </table>
+                <p id="resumoBreaks" style="margin-top:15px;">
+                    <strong>Total:</strong> 0 registros
+                </p>
+                <button class="vermelho" onclick="limparBreaks()">🗑️ Zerar Tudo</button>
+            </div>
+        </div>
+
+        <!-- ================= UTILIDADES ================= -->
+        <div id="pag-utilidades" class="pagina">
+            <header>
+                <div>
+                    <h2>🛠️ Utilidades</h2>
+                    <p>Ferramentas práticas</p>
+                </div>
+                <div class="relogio" id="hora4"></div>
+            </header>
+            <div class="caixa-form">
+                <h2>🌴 Dias até a Folga</h2>
+                <div class="linha-form">
+                    <label>Funcionário:</label>
+                    <select id="funcionario" onchange="calcularFolga()">
+                        <option value="">Selecione</option>
+                        <option value="1">Dandara (Segunda)</option>
+                        <option value="2">Luísa (Terça)</option>
+                        <option value="3">Gabriel (Quarta)</option>
+                        <option value="4">Amanda (Quinta)</option>
+                        <option value="5">Julyan (Sexta)</option>
+                    </select>
+                </div>
+                <div id="resFolga" style="margin-top:15px;padding:15px;background:#FFF4E8;border-radius:12px;display:none;">
+                    <p id="textoFolga"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= QR CODE ================= -->
+        <div id="pag-qrcode" class="pagina">
+            <header>
+                <div>
+                    <h2>📱 Acesso Rápido</h2>
+                    <p>Escaneie para abrir</p>
+                </div>
+                <div class="relogio" id="hora5"></div>
+            </header>
+            <div class="tabela" style="text-align:center;">
+                <h2>📱 QR Code</h2>
+                <img
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://burguerking723.github.io/Escala18069/"
+                    alt="QR Code"
+                    width="250"
+                    height="250"
+                >
+                <p style="margin-top:15px;">
+                    https://burguerking723.github.io/Escala18069/
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* =========================================================
+           FIREBASE
+        ========================================================= */
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPfk6RUVWYZ8vQ80j-HSPrIK42yzwIA-Nk",
+            authDomain: "bk-escala.firebaseapp.com",
+            databaseURL: "https://bk-escala-default-rtdb.firebaseio.com",
+            projectId: "bk-escala",
+            storageBucket: "bk-escala.firebasestorage.app",
+            messagingSenderId: "191531981744",
+            appId: "1:191531981744:web:9f87cc5ae24bfa1e3c31475"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const DESPERDICIO_REF = db.ref("desperdicio");
+        const BREAKS_REF = db.ref("breaks");
+        const ESCALA_FECHAMENTO_REF = db.ref("escala_fechamento");
+        const ESCALA_PRE_REF = db.ref("escala_pre_fechamento");
+        const EQUIPE_FECHAMENTO_REF = db.ref("equipe_fechamento");
+        const EQUIPE_PRE_REF = db.ref("equipe_pre_fechamento");
+        const AVISO_REF = db.ref("aviso_geral");
+        const AVISO_PRE_REF = db.ref("aviso_pre_fechamento");
+
+        /* =========================================================
+           CONFIGURAÇÕES
+        ========================================================= */
+        const SENHA_EDICAO = "292722";
+        let podeEditarFechamento = false;
+        let podeEditarPre = false;
+        let escalaFechamentoAtual = [];
+        let escalaPreAtual = [];
+        let funcionariosFechamento = ["Daniel", "Mariana", "Julyan", "Thuanney"];
+        let funcionariosPre = ["Gabriel", "Amanda", "Dandara", "Luísa", "Júlia"];
+        const diasSemana = [
+            "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
+            "Quinta-feira", "Sexta-feira", "Sábado"
+        ];
+
+        /* =========================================================
+           ESCALAS PADRÃO - usadas quando ainda não existe uma escala salva no Firebase
+        ========================================================= */
+        const ESCALA_FECHAMENTO_PADRAO = [
+            { folga:"Julyan", Daniel:"Broiler", Mariana:"Coifa", Julyan:"— FOLGA —", Thuanney:"Louça + Mesa" },
+            { folga:"Thuanney", Daniel:"Mesa + Broiler", Mariana:"Louça", Julyan:"Coifa", Thuanney:"— FOLGA —" },
+            { folga:"Daniel", Daniel:"— FOLGA —", Mariana:"Broiler", Julyan:"Mesa + Coifa", Thuanney:"Louça" },
+            { folga:"Mariana", Daniel:"Coifa", Mariana:"— FOLGA —", Julyan:"Broiler + Mesa", Thuanney:"Louça" },
+            { folga:"—", Daniel:"Broiler", Mariana:"Coifa", Julyan:"Louça", Thuanney:"Mesa" },
+            { folga:"—", Daniel:"Coifa", Mariana:"Broiler", Julyan:"Mesa", Thuanney:"Louça" },
+            { folga:"—", Daniel:"Louça + Mesa", Mariana:"Broiler", Julyan:"Coifa", Thuanney:"Mesa" }
+        ];
+
+        const ESCALA_PRE_PADRAO = [
+            { Gabriel:"Freezer", Amanda:"Batateira", Dandara:"Folga", Luísa:"Freezer Frango", Júlia:"Freezer Carne ■ Lixeiras" },
+            { Gabriel:"Freezer Frango", Amanda:"Freezer Carne", Dandara:"Freezer", Luísa:"Batateira", Júlia:"Folga" },
+            { Gabriel:"Folga", Amanda:"Freezer Frango", Dandara:"Freezer Carne ■ Lixeiras", Luísa:"Freezer", Júlia:"Batateira" },
+            { Gabriel:"Batateira", Amanda:"Folga", Dandara:"Freezer Frango", Luísa:"Freezer Carne ■ Lixeiras", Júlia:"Freezer" },
+            { Gabriel:"Freezer Carne", Amanda:"Freezer", Dandara:"Batateira", Luísa:"Folga", Júlia:"Freezer Frango ■ Lixeiras" },
+            { Gabriel:"Lixeiras ■ Freezer Frango", Amanda:"Freezer Carne", Dandara:"Freezer", Luísa:"Batateira", Júlia:"—" },
+            { Gabriel:"Freezer", Amanda:"Batateira", Dandara:"Lixeiras ■ Freezer Carne", Luísa:"Freezer Frango", Júlia:"—" }
+        ];
+        const sidebar = document.getElementById("sidebar");
+        const conteudo = document.getElementById("conteudo");
+
+        /* =========================================================
+           AVISO IMPORTANTE - FUNÇÕES
+        ========================================================= */
+        function alternarFormAviso() {
+            document.getElementById("formAvisoContainer").classList.toggle("visivel");
+        }
+        function alternarFormAvisoPre() {
+            document.getElementById("formAvisoContainerPre").classList.toggle("visivel");
+        }
+        function salvarAviso() {
+            const texto = document.getElementById("novoTextoAviso").value.trim();
+            if (!texto) {
+                alert("⚠️ Digite uma mensagem para o aviso!");
+                return;
+            }
+            AVISO_REF.set({
+                mensagem: texto,
+                data: new Date().toLocaleDateString("pt-BR"),
+                hora: new Date().toLocaleTimeString("pt-BR", {hour:'2-digit', minute:'2-digit'}),
+                atualizadoPor: "Sistema"
+            }).then(() => {
+                alert("✅ Aviso publicado com sucesso! Todos verão agora.");
+                document.getElementById("formAvisoContainer").classList.remove("visivel");
+            }).catch(erro => {
+                alert("❌ Erro ao publicar: " + erro.message);
+            });
+        }
+        function salvarAvisoPre() {
+            const texto = document.getElementById("novoTextoAvisoPre").value.trim();
+            if (!texto) {
+                alert("⚠️ Digite uma mensagem para o aviso!");
+                return;
+            }
+            AVISO_PRE_REF.set({
+                mensagem: texto,
+                data: new Date().toLocaleDateString("pt-BR"),
+                hora: new Date().toLocaleTimeString("pt-BR", {hour:'2-digit', minute:'2-digit'}),
+                atualizadoPor: "Sistema"
+            }).then(() => {
+                alert("✅ Aviso publicado com sucesso!");
+                document.getElementById("formAvisoContainerPre").classList.remove("visivel");
+            }).catch(erro => {
+                alert("❌ Erro ao publicar: " + erro.message);
+            });
+        }
+
+        function limparAviso() {
+            if (confirm("🗑️ Tem certeza que deseja limpar o aviso?")) {
+                document.getElementById("novoTextoAviso").value = "";
+                AVISO_REF.remove();
+            }
+        }
+
+        /* =========================================================
+           CARREGAR AVISOS
+        ========================================================= */
+        AVISO_REF.on("value", (snap) => {
+            const dado = snap.val();
+            if (dado && dado.mensagem) {
+                document.getElementById("textoAviso").innerHTML = dado.mensagem.replace(/\n/g, "<br>");
+                document.getElementById("novoTextoAviso").value = dado.mensagem;
+            }
+        });
+
+        AVISO_PRE_REF.on("value", (snap) => {
+            const dado = snap.val();
+            if (dado && dado.mensagem) {
+                document.getElementById("textoAvisoPre").innerHTML = dado.mensagem.replace(/\n/g, "<br>");
+                document.getElementById("novoTextoAvisoPre").value = dado.mensagem;
+            }
+        });
+
+        /* =========================================================
+           MENU E TEMA
+        ========================================================= */
+        function toggleMenu() {
+            sidebar.classList.toggle("minimizado");
+            conteudo.classList.toggle("expandido");
+        }
+
+        function alternarTema() {
+            document.body.classList.toggle("escuro");
+            localStorage.setItem("tema", document.body.classList.contains("escuro") ? "escuro" : "claro");
+        }
+
+        if (localStorage.getItem("tema") === "escuro") {
+            document.body.classList.add("escuro");
+        }
+
+        function mostrarPagina(id, link) {
+            document.querySelectorAll(".pagina").forEach(p => p.classList.remove("ativa"));
+            document.querySelectorAll(".menu a").forEach(a => a.classList.remove("ativo"));
+            document.getElementById("pag-" + id).classList.add("ativa");
+            if (link) link.classList.add("ativo");
+        }
+
+        /* =========================================================
+           RELÓGIO
+        ========================================================= */
+        function atualizarRelogio() {
+            const agora = new Date();
+            const horario = agora.toLocaleTimeString("pt-BR", {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+            document.querySelectorAll(".relogio").forEach(el => el.textContent = horario);
+        }
+        atualizarRelogio();
+        setInterval(atualizarRelogio, 1000);
+
+        /* =========================================================
+           ESCALA DE FECHAMENTO
+        ========================================================= */
+        function gerarLinhaFechamento(dia, folga, valores) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="celula-editavel ${podeEditarFechamento ? 'pode-editar' : ''}" data-campo="dia">${dia}</td>
+                <td class="celula-editavel ${podeEditarFechamento ? 'pode-editar' : ''}" data-campo="folga">${folga}</td>
+                ${valores.map(v => `<td class="celula-editavel ${podeEditarFechamento ? 'pode-editar' : ''}">${v || ''}</td>`).join('')}
+            `;
+            return tr;
+        }
+
+        function renderizarEscalaFechamento() {
+            const corpo = document.getElementById("corpoFechamento");
+            corpo.innerHTML = "";
+            const hoje = new Date();
+            const diaSemanaHoje = hoje.getDay();
+            const inicioSemana = new Date(hoje);
+            inicioSemana.setDate(hoje.getDate() - diaSemanaHoje);
+
+            for (let i = 0; i < 7; i++) {
+                const data = new Date(inicioSemana);
+                data.setDate(inicioSemana.getDate() + i);
+                const diaStr = `${diasSemana[i]}<br>${data.toLocaleDateString("pt-BR")}`;
+                const folga = escalaFechamentoAtual[i]?.folga || "-";
+                const valores = funcionariosFechamento.map(nome => escalaFechamentoAtual[i]?.[nome] || "");
+                corpo.appendChild(gerarLinhaFechamento(diaStr, folga, valores));
+            }
+        }
+
+        function liberarEdicaoFech() {
+            const senha = document.getElementById("senhaFech").value;
+            if (senha === SENHA_EDICAO) {
+                podeEditarFechamento = true;
+                document.getElementById("statusEditFechado").textContent = "🔓 Liberado";
+                document.getElementById("statusEditFechado").classList.remove("bloqueado");
+                document.getElementById("statusEditFechado").classList.add("liberado");
+                document.getElementById("botoesSalvarFech").style.display = "block";
+                renderizarEscalaFechamento();
+                alert("✅ Edição liberada!");
+            } else {
+                alert("❌ Senha incorreta!");
+            }
+        }
+
+        function salvarEscalaFechamento() {
+            ESCALA_FECHAMENTO_REF.set(escalaFechamentoAtual).then(() => {
+                alert("✅ Escala salva e sincronizada!");
+            }).catch(e => alert("❌ Erro: " + e.message));
+        }
+
+        function recarregarEscalaFech() {
+            if (confirm("🔄 Restaurar escala original?")) {
+                ESCALA_FECHAMENTO_REF.once("value").then(snap => {
+                    const dados = snap.val();
+                    escalaFechamentoAtual = Array.isArray(dados) && dados.length
+                        ? dados
+                        : JSON.parse(JSON.stringify(ESCALA_FECHAMENTO_PADRAO));
+                    renderizarEscalaFechamento();
+                });
+            }
+        }
+
+        function adicionarFuncionarioFech() {
+            const nome = prompt("Nome do funcionário:");
+            if (nome && nome.trim()) {
+                funcionariosFechamento.push(nome.trim());
+                EQUIPE_FECHAMENTO_REF.set(funcionariosFechamento);
+                atualizarCabecalhoFechamento();
+                renderizarEscalaFechamento();
+            }
+        }
+
+        function atualizarCabecalhoFechamento() {
+            const cab = document.getElementById("cabecalhoFechamento").querySelector("tr");
+            cab.innerHTML = `<th>Dia</th><th>Folga</th>`;
+            funcionariosFechamento.forEach(nome => {
+                const th = document.createElement("th");
+                th.textContent = nome;
+                cab.appendChild(th);
+            });
+        }
+
+        ESCALA_FECHAMENTO_REF.on("value", (snap) => {
+            const dados = snap.val();
+            escalaFechamentoAtual = Array.isArray(dados) && dados.length
+                ? dados
+                : JSON.parse(JSON.stringify(ESCALA_FECHAMENTO_PADRAO));
+            renderizarEscalaFechamento();
+        });
+
+        EQUIPE_FECHAMENTO_REF.on("value", (snap) => {
+            funcionariosFechamento = snap.val() || ["Daniel", "Mariana", "Julyan", "Thuanney"];
+            atualizarCabecalhoFechamento();
+            renderizarEscalaFechamento();
+        });
+
+        /* =========================================================
+           ESCALA DE PRÉ-FECHAMENTO
+        ========================================================= */
+        function gerarLinhaPre(dia, valores) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="celula-editavel ${podeEditarPre ? 'pode-editar' : ''}">${dia}</td>
+                ${valores.map(v => `<td class="celula-editavel ${podeEditarPre ? 'pode-editar' : ''}">${v || ''}</td>`).join('')}
+            `;
+            return tr;
+        }
+
+        function renderizarEscalaPre() {
+            const corpo = document.getElementById("corpoPre");
+            corpo.innerHTML = "";
+            const hoje = new Date();
+            const diaSemanaHoje = hoje.getDay();
+            const inicioSemana = new Date(hoje);
+            inicioSemana.setDate(hoje.getDate() - diaSemanaHoje);
+
+            for (let i = 0; i < 7; i++) {
+                const data = new Date(inicioSemana);
+                data.setDate(inicioSemana.getDate() + i);
+                const diaStr = `${diasSemana[i]}<br>${data.toLocaleDateString("pt-BR")}`;
+                const valores = funcionariosPre.map(nome => escalaPreAtual[i]?.[nome] || "");
+                corpo.appendChild(gerarLinhaPre(diaStr, valores));
+            }
+        }
+
+        function liberarEdicaoPre() {
+            const senha = document.getElementById("senhaPre").value;
+            if (senha === SENHA_EDICAO) {
+                podeEditarPre = true;
+                document.getElementById("statusEditPre").textContent = "🔓 Liberado";
+                document.getElementById("statusEditPre").classList.remove("bloqueado");
+                document.getElementById("statusEditPre").classList.add("liberado");
+                document.getElementById("botoesSalvarPre").style.display = "block";
+                renderizarEscalaPre();
+                alert("✅ Edição liberada!");
+            } else {
+                alert("❌ Senha incorreta!");
+            }
+        }
+
+        function salvarEscalaPre() {
+            ESCALA_PRE_REF.set(escalaPreAtual).then(() => {
+                alert("✅ Escala salva e sincronizada!");
+            }).catch(e => alert("❌ Erro: " + e.message));
+        }
+
+        function recarregarEscalaPre() {
+            if (confirm("🔄 Restaurar escala original?")) {
+                ESCALA_PRE_REF.once("value").then(snap => {
+                    const dados = snap.val();
+                    escalaPreAtual = Array.isArray(dados) && dados.length
+                        ? dados
+                        : JSON.parse(JSON.stringify(ESCALA_PRE_PADRAO));
+                    renderizarEscalaPre();
+                });
+            }
+        }
+
+        function adicionarFuncionarioPre() {
+            const nome = prompt("Nome do funcionário:");
+            if (nome && nome.trim()) {
+                funcionariosPre.push(nome.trim());
+                EQUIPE_PRE_REF.set(funcionariosPre);
+                atualizarCabecalhoPre();
+                renderizarEscalaPre();
+            }
+        }
+
+        function atualizarCabecalhoPre() {
+            const cab = document.getElementById("cabecalhoPre").querySelector("tr");
+            cab.innerHTML = `<th>Dia</th>`;
+            funcionariosPre.forEach(nome => {
+                const th = document.createElement("th");
+                th.textContent = nome;
+                cab.appendChild(th);
+            });
+        }
+
+        ESCALA_PRE_REF.on("value", (snap) => {
+            const dados = snap.val();
+            escalaPreAtual = Array.isArray(dados) && dados.length
+                ? dados
+                : JSON.parse(JSON.stringify(ESCALA_PRE_PADRAO));
+            renderizarEscalaPre();
+        });
+
+        EQUIPE_PRE_REF.on("value", (snap) => {
+            funcionariosPre = snap.val() || ["Gabriel", "Amanda", "Dandara", "Luísa", "Júlia"];
+            atualizarCabecalhoPre();
+            renderizarEscalaPre();
+        });
+
+        /* =========================================================
+           VALIDADE
+        ========================================================= */
+        function calcularValidade() {
+            const dataFab = document.getElementById("dataFab").value;
+            const tipo = document.getElementById("tipoValidade").value;
+            const qtd = parseInt(document.getElementById("quantidade").value);
+
+            if (!dataFab || !qtd) {
+                alert("⚠️ Preencha todos os campos!");
+                return;
+            }
+
+            const data = new Date(dataFab);
+            if (tipo === "dias") {
+                data.setDate(data.getDate() + qtd);
+            } else {
+                data.setMonth(data.getMonth() + qtd);
+            }
+
+            document.getElementById("caixaResultado").style.display = "block";
+            document.getElementById("dtValidade").textContent = data.toLocaleDateString("pt-BR");
+        }
+
+        function usarHoje() {
+            document.getElementById("dataFab").value = new Date().toISOString().split('T')[0];
+        }
+
+        /* =========================================================
+           DESPERDÍCIO
+        ========================================================= */
+        function verificarOutro() {
+            const selecionado = document.getElementById("produto").value;
+            document.getElementById("campoOutroProduto").style.display = selecionado === "outros" ? "flex" : "none";
+        }
+
+        function normalizarNomeProduto(nome) {
+            return String(nome || "")
+                .trim()
+                .replace(/\s+/g, " ")
+                .toLocaleLowerCase("pt-BR");
+        }
+
+        function escaparHtml(texto) {
+            return String(texto ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function obterProdutoDesperdicio() {
+            let produto = document.getElementById("produto").value;
+            if (produto === "outros") {
+                produto = document.getElementById("produtoOutro").value.trim();
+                if (!produto) {
+                    alert("⚠️ Digite o nome do produto!");
+                    return "";
+                }
+            }
+            return produto.trim();
+        }
+
+        function limparCamposDesperdicio() {
+            document.getElementById("produto").value = "";
+            document.getElementById("qtdDesperdicio").value = "";
+            document.getElementById("produtoOutro").value = "";
+            verificarOutro();
+        }
+
+        function adicionarDesperdicio() {
+            const produto = obterProdutoDesperdicio();
+            const qtd = parseInt(document.getElementById("qtdDesperdicio").value, 10);
+
+            if (!produto || !Number.isInteger(qtd) || qtd <= 0) {
+                alert("⚠️ Informe um produto e uma quantidade maior que zero!");
+                return;
+            }
+
+            DESPERDICIO_REF.once("value").then(snap => {
+                const dados = snap.val() || {};
+                const chave = normalizarNomeProduto(produto);
+                const encontrados = Object.entries(dados).filter(([, item]) =>
+                    normalizarNomeProduto(item.produto) === chave
+                );
+
+                if (encontrados.length === 0) {
+                    return DESPERDICIO_REF.push({
+                        produto: produto,
+                        quantidade: qtd,
+                        horario: new Date().toLocaleString("pt-BR")
+                    });
+                }
+
+                const [idPrincipal, itemPrincipal] = encontrados[0];
+                const totalAtual = encontrados.reduce((soma, [, item]) => soma + (parseInt(item.quantidade, 10) || 0), 0);
+                const novoTotal = totalAtual + qtd;
+
+                const atualizacoes = {};
+                atualizacoes[idPrincipal] = {
+                    produto: itemPrincipal.produto || produto,
+                    quantidade: novoTotal,
+                    horario: new Date().toLocaleString("pt-BR")
+                };
+
+                encontrados.slice(1).forEach(([id]) => {
+                    atualizacoes[id] = null;
+                });
+
+                return DESPERDICIO_REF.update(atualizacoes);
+            }).then(() => {
+                limparCamposDesperdicio();
+            }).catch(e => alert("❌ Erro ao registrar desperdício: " + e.message));
+        }
+
+        function alterarQuantidadeDesperdicio(id, delta) {
+            DESPERDICIO_REF.once("value").then(snap => {
+                const dados = snap.val() || {};
+                const itemBase = dados[id];
+                if (!itemBase) return;
+
+                const chave = normalizarNomeProduto(itemBase.produto);
+                const encontrados = Object.entries(dados).filter(([, item]) =>
+                    normalizarNomeProduto(item.produto) === chave
+                );
+
+                const totalAtual = encontrados.reduce((soma, [, item]) => soma + (parseInt(item.quantidade, 10) || 0), 0);
+                const novoTotal = totalAtual + delta;
+
+                if (novoTotal <= 0) {
+                    const exclusoes = {};
+                    encontrados.forEach(([itemId]) => exclusoes[itemId] = null);
+                    return DESPERDICIO_REF.update(exclusoes);
+                }
+
+                const [idPrincipal] = encontrados[0];
+                const atualizacoes = {};
+                atualizacoes[idPrincipal] = {
+                    produto: itemBase.produto,
+                    quantidade: novoTotal,
+                    horario: new Date().toLocaleString("pt-BR")
+                };
+                encontrados.slice(1).forEach(([itemId]) => atualizacoes[itemId] = null);
+                return DESPERDICIO_REF.update(atualizacoes);
+            }).catch(e => alert("❌ Erro ao alterar quantidade: " + e.message));
+        }
+
+        DESPERDICIO_REF.on("value", (snap) => {
+            const dados = snap.val() || {};
+            const corpo = document.getElementById("corpoDesp");
+            corpo.innerHTML = "";
+            let total = 0;
+            const agrupados = {};
+
+            Object.entries(dados).forEach(([id, item]) => {
+                if (!item || !item.produto) return;
+                const chave = normalizarNomeProduto(item.produto);
+                if (!agrupados[chave]) {
+                    agrupados[chave] = {
+                        idPrincipal: id,
+                        produto: item.produto,
+                        quantidade: 0,
+                        horario: item.horario || ""
+                    };
+                }
+                agrupados[chave].quantidade += parseInt(item.quantidade, 10) || 0;
+                if (item.horario) agrupados[chave].horario = item.horario;
+            });
+
+            Object.values(agrupados).forEach(item => {
+                total += item.quantidade;
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${escaparHtml(item.horario)}</td>
+                    <td class="produto-registro">${escaparHtml(item.produto)}</td>
+                    <td><span class="qtd-valor">${item.quantidade}</span></td>
+                    <td>
+                        <div class="controle-qtd" aria-label="Alterar quantidade de ${escaparHtml(item.produto)}">
+                            <button class="btn-qtd menos" onclick="alterarQuantidadeDesperdicio('${item.idPrincipal}', -1)" title="Diminuir 1">−</button>
+                            <button class="btn-qtd mais" onclick="alterarQuantidadeDesperdicio('${item.idPrincipal}', 1)" title="Aumentar 1">+</button>
+                        </div>
+                    </td>
+                    <td><button class="vermelho" onclick="excluirDesperdicio('${item.idPrincipal}')">🗑️</button></td>
+                `;
+                corpo.appendChild(tr);
+            });
+
+            document.getElementById("resumo").innerHTML = `<strong>Total:</strong> ${total} unidades • <strong>${Object.keys(agrupados).length}</strong> item(ns)`;
+        });
+
+        function excluirDesperdicio(id) {
+            if (!confirm("🗑️ Excluir este item e toda a quantidade agrupada?")) return;
+
+            DESPERDICIO_REF.once("value").then(snap => {
+                const dados = snap.val() || {};
+                const item = dados[id];
+                if (!item) return;
+                const chave = normalizarNomeProduto(item.produto);
+                const exclusoes = {};
+                Object.entries(dados).forEach(([itemId, registro]) => {
+                    if (normalizarNomeProduto(registro.produto) === chave) exclusoes[itemId] = null;
+                });
+                return DESPERDICIO_REF.update(exclusoes);
+            }).catch(e => alert("❌ Erro ao excluir: " + e.message));
+        }
+
+        function limparDesperdicios() {
+            if (confirm("⚠️ Zerar TODOS os registros de desperdício?")) {
+                DESPERDICIO_REF.remove();
+            }
+        }
+
+        /* =========================================================
+           BREAKS
+        ========================================================= */
+        function adicionarBreak(turno) {
+            const nome = document.getElementById(`nomeFunc${turno.charAt(0).toUpperCase() + turno.slice(1)}`).value.trim();
+            const itens = document.getElementById(`itens${turno.charAt(0).toUpperCase() + turno.slice(1)}`).value.trim();
+            const data = document.getElementById("dataBreak").value || new Date().toLocaleDateString("pt-BR");
+            const gerente = document.getElementById("gerenteTurno").value.trim() || "Não informado";
+
+            if (!nome || !itens) {
+                alert("⚠️ Preencha nome e itens consumidos!");
+                return;
+            }
+
+            BREAKS_REF.push({
+                turno: turno === "manha" ? "☀️ Manhã" : "🌙 Noite",
+                nome,
+                itens,
+                data,
+                gerente,
+                horarioCompleto: new Date().toLocaleString("pt-BR")
+            }).then(() => {
+                document.getElementById(`nomeFunc${turno.charAt(0).toUpperCase() + turno.slice(1)}`).value = "";
+                document.getElementById(`itens${turno.charAt(0).toUpperCase() + turno.slice(1)}`).value = "";
+                alert("✅ Break registrado!");
+            });
+        }
+
+        BREAKS_REF.on("value", (snap) => {
+            const dados = snap.val() || {};
+            const corpo = document.getElementById("corpoBreaks");
+            corpo.innerHTML = "";
+            let total = 0;
+
+            Object.entries(dados).forEach(([id, reg]) => {
+                total++;
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${reg.turno}</td>
+                    <td>${reg.nome}</td>
+                    <td>${reg.itens}</td>
+                    <td>${reg.gerente}</td>
+                    <td>${reg.horarioCompleto}</td>
+                    <td><button class="vermelho" onclick="excluirBreak('${id}')">🗑️</button></td>
+                `;
+                corpo.appendChild(tr);
+            });
+
+            document.getElementById("resumoBreaks").innerHTML = `<strong>Total:</strong> ${total} registros`;
+        });
+
+        function excluirBreak(id) {
+            if (confirm("🗑️ Excluir este registro?")) {
+                BREAKS_REF.child(id).remove();
+            }
+        }
+
+        function limparBreaks() {
+            if (confirm("⚠️ Zerar TODOS os registros de Breaks?")) {
+                BREAKS_REF.remove();
+            }
+        }
+
+        /* =========================================================
+           UTILIDADES - FOLGA
+        ========================================================= */
+        const folgas = {
+            "1": { nome: "Dandara", dia: 1 },
+            "2": { nome: "Luísa", dia: 2 },
+            "3": { nome: "Gabriel", dia: 3 },
+            "4": { nome: "Amanda", dia: 4 },
+            "5": { nome: "Julyan", dia: 5 }
+        };
+
+        function calcularFolga() {
+            const escolha = document.getElementById("funcionario").value;
+            if (!escolha) {
+                document.getElementById("resFolga").style.display = "none";
+                return;
+            }
+
+            const { nome, dia } = folgas[escolha];
+            const hoje = new Date();
+            const diaHoje = hoje.getDay();
+            let diasAte = dia - diaHoje;
+            if (diasAte <= 0) diasAte += 7;
+
+            document.getElementById("resFolga").style.display = "block";
+            document.getElementById("textoFolga").innerHTML = `
+                <strong>${nome}</strong> sua folga é na <strong>${diasSemana[dia]}</strong>.<br>
+                Faltam <strong>${diasAte} dia${diasAte !== 1 ? 's' : ''}</strong> até a folga! 🎉
+            `;
+        }
+    </script>
+</body>
+</html>
